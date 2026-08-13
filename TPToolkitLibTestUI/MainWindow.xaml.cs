@@ -1,0 +1,59 @@
+﻿using Microsoft.Win32;
+using System.Globalization;
+using System.Runtime;
+using System.Text;
+using System.Threading;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using TPToolkitLib;
+
+namespace TPToolkitLibUITest
+{
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+            InitializeComponent();
+            
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog()
+            {
+                Multiselect = true,
+                DefaultExt = ".mdb",
+                Filter = "Mesh (.mdb)|*.mdb",
+                Title = "Select meshes",
+            };
+            var sfd = new SaveFileDialog
+            {
+                DefaultExt = "glb",
+                Filter = "GL Transmission Format Binary (*.glb)|*.glb|Object file (*.obj)|*.obj",
+            };
+            if (ofd.ShowDialog() == true && sfd.ShowDialog() == true)
+            {
+                if (sfd.FilterIndex == 1) // glb
+                {
+
+                }
+                else // obj
+                {
+                    MdbTool.XMdbTo1Obj(ofd.FileNames, sfd.FileName, "C:\\Users\\User0\\Documents\\Desktop\\TreasurePlanet\\TP_Game_ORIGINAL\\BD_Textures", true);
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+	<LangVersion>13</LangVersion>
+	<TargetFramework>net48</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+	<PlatformTarget>AnyCPU</PlatformTarget>
+	<GenerateApplicationConfigurationFile>false</GenerateApplicationConfigurationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TPToolkitLib\TPToolkitLib.csproj" />
+  </ItemGroup>
+
+</Project>
