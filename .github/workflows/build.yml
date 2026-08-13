@@ -36,7 +36,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Pack
-        run: dotnet pack --configuration Release --no-build --output ./out -p:PackageVersion=${{ steps.version.outputs.version }}
+        run: dotnet pack TPToolkitLib --configuration Release --no-build --output ./out -p:PackageVersion=${{ steps.version.outputs.version }}
         
       # Get a short-lived NuGet API key
       - name: NuGet login (OIDC → temp API key)
