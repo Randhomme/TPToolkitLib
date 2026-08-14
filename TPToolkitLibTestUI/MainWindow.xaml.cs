@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WF = System.Windows.Forms;
 using TPToolkitLib;
 
 namespace TPToolkitLibUITest
@@ -29,6 +30,7 @@ namespace TPToolkitLibUITest
             
         }
 
+        // X mdb to 1 3d file
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             var ofd = new OpenFileDialog()
@@ -47,12 +49,54 @@ namespace TPToolkitLibUITest
             {
                 if (sfd.FilterIndex == 1) // glb
                 {
-
+                    MdbTool.XMdbTo1Glb(ofd.FileNames, sfd.FileName, "C:\\Users\\User0\\Documents\\Desktop\\TreasurePlanet\\TP_Game_ORIGINAL\\BD_Textures", true);
                 }
                 else // obj
                 {
                     MdbTool.XMdbTo1Obj(ofd.FileNames, sfd.FileName, "C:\\Users\\User0\\Documents\\Desktop\\TreasurePlanet\\TP_Game_ORIGINAL\\BD_Textures", true);
                 }
+            }
+        }
+
+        // X mdb to X obj
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog()
+            {
+                Multiselect = true,
+                DefaultExt = ".mdb",
+                Filter = "Mesh (.mdb)|*.mdb",
+                Title = "Select meshes",
+            };
+            var sfbd = new WF.FolderBrowserDialog()
+            {
+                Description = "Select the TPGame folder",
+                ShowNewFolderButton = false,
+            };
+            if (ofd.ShowDialog() == true && sfbd.ShowDialog() == WF.DialogResult.OK)
+            {
+                MdbTool.XMdbToXObj(ofd.FileNames, sfbd.SelectedPath, "C:\\Users\\User0\\Documents\\Desktop\\TreasurePlanet\\TP_Game_ORIGINAL\\BD_Textures", true);
+            }
+        }
+
+        // X mdb to X glb
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog()
+            {
+                Multiselect = true,
+                DefaultExt = ".mdb",
+                Filter = "Mesh (.mdb)|*.mdb",
+                Title = "Select meshes",
+            };
+            var sfbd = new WF.FolderBrowserDialog()
+            {
+                Description = "Select the TPGame folder",
+                ShowNewFolderButton = false,
+            };
+            if (ofd.ShowDialog() == true && sfbd.ShowDialog() == WF.DialogResult.OK)
+            {
+                MdbTool.XMdbToXGlb(ofd.FileNames, sfbd.SelectedPath, "C:\\Users\\User0\\Documents\\Desktop\\TreasurePlanet\\TP_Game_ORIGINAL\\BD_Textures", true);
             }
         }
     }

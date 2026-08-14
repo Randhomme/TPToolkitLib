@@ -8,7 +8,9 @@
         Title="MainWindow" Height="450" Width="800">
     <Grid>
         <StackPanel Margin="5">
-            <Button Margin="5" Content="CLICK" Click="Button_Click"/>
+            <Button Margin="5" Content="X MDB to 1 OBJ/GLB" Click="Button_Click"/>
+            <Button Margin="5" Content="X MDB to X OBJ" Click="Button_Click_1"/>
+            <Button Margin="5" Content="X MDB to X GLB" Click="Button_Click_2"/>
         </StackPanel>
     </Grid>
 </Window>

@@ -2,6 +2,7 @@
 using SharpGLTF.Geometry.VertexTypes;
 using SharpGLTF.Materials;
 using SharpGLTF.Scenes;
+using SharpGLTF.Schema2;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,6 +20,34 @@ namespace TPToolkitLib
         {
             var meshes = MeshFromMdbs(mdbFilePaths, lods);
             MeshesToObj(meshes, objFilePath, textureDirectory);
+        }
+
+        public static void XMdbTo1Glb(string[] mdbFilePaths, string glbFilePath, string textureDirectory, bool lods)
+        {
+            var meshes = MeshFromMdbs(mdbFilePaths, lods);
+            MeshesToGlb(meshes, glbFilePath, textureDirectory);
+        }
+
+        public static void XMdbToXObj(string[] mdbFilePaths, string objFolderPath, string textureDirectory, bool lods)
+        {
+            for (int i = 0; i < mdbFilePaths.Length; i++)
+            {
+                var mdbFilePath = mdbFilePaths[i];
+                var mesh = MeshFromMdb(mdbFilePath, lods);
+                string objFilePath = Path.Combine(objFolderPath, Path.ChangeExtension(mesh.GroupName, "obj"));
+                MeshToObj(mesh, objFilePath, textureDirectory);
+            }
+        }
+
+        public static void XMdbToXGlb(string[] mdbFilePaths, string glbFolderPath, string textureDirectory, bool lods)
+        {
+            for (int i = 0; i < mdbFilePaths.Length; i++)
+            {
+                var mdbFilePath = mdbFilePaths[i];
+                var mesh = MeshFromMdb(mdbFilePath, lods);
+                string glbFilePath = Path.Combine(glbFolderPath, Path.ChangeExtension(mesh.GroupName, "glb"));
+                MeshToGlb(mesh, glbFilePath, textureDirectory);
+            }
         }
 
         public static IEnumerable<MdbMesh> MeshFromMdbs(string[] mdbFilePaths, bool lods)
@@ -43,10 +72,30 @@ namespace TPToolkitLib
         public static void MeshesToObj(IEnumerable<MdbMesh> meshes, string objFilePath, string textureDirectory)
         {
             string mtlPath = Path.ChangeExtension(objFilePath, "mtl");
+            var finalMdbMaterials = GetFinalMdbMaterials(meshes);
             // Write mtl
-            WriteMtarialsToMtl(meshes, mtlPath, textureDirectory);
+            WriteMaterialsToNewMtl(finalMdbMaterials, mtlPath, textureDirectory);
             // Write obj
-            WriteMeshesToObj(meshes, objFilePath, mtlPath);
+            WriteMeshesToNewObj(meshes, objFilePath, mtlPath);
+        }
+
+        public static void MeshToObj(MdbMesh mesh, string objFilePath, string textureDirectory)
+        {
+            string mtlFilePath = Path.ChangeExtension(objFilePath, "mtl");
+            // Write mtl
+            WriteMaterialsToNewMtl(mesh.Materials, mtlFilePath, textureDirectory);
+            // Write obj
+            WriteMeshToNewObj(mesh, objFilePath, mtlFilePath);
+        }
+
+        public static void MeshesToGlb(IEnumerable<MdbMesh> meshes, string glbFilePath, string textureDirectory)
+        {
+            WriteMeshesToNewGlb(meshes, glbFilePath, textureDirectory);
+        }
+
+        public static void MeshToGlb(MdbMesh mesh, string glbFilePath, string textureDirectory)
+        {
+            WriteMeshToNewGlb(mesh, glbFilePath, textureDirectory);
         }
 
         private static void ReadMdb(MdbMesh mesh, string mdbFilePath, bool lods)
@@ -201,10 +250,10 @@ namespace TPToolkitLib
                         mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
                         //texture name
                         int strlength = mdbReader.ReadInt32(); //can't use uint because ReadChars uses int and it's not cool
-                                                               //checking negative case
+                        //checking negative case
                         if (strlength < 0)
                             strlength = -strlength - 1; //let's just use the opposite for simplicity
-                                                        //creating material
+                        //creating material
                         var mat = new MdbMaterial();
                         mat.TextureName = new string(mdbReader.ReadChars(strlength));
                         //generate material name from texture name
@@ -220,9 +269,6 @@ namespace TPToolkitLib
                         throw new Exception("Skipped\nUnable to read material " + i + ".\n");
                     }
                 }
-                //ReorganizeTextureIndex(mdbMesh);
-                //currentMdbMaterials.Clear();
-                //mdbMeshes.Add(mdbMesh);
             }
         }
 
@@ -243,9 +289,64 @@ namespace TPToolkitLib
             return finalMaterials;
         }
 
-        private static void WriteMtarialsToMtl(IEnumerable<MdbMesh> meshes, string mtlPath, string textureDirectory)
+        private static IList<MaterialBuilder> GetFinalGlbMaterials(IList<MdbMaterial> finalMdbMaterials, string textureDirectory)
         {
-            var finalMdbMaterials = GetFinalMdbMaterials(meshes);
+            var glbMaterials = new List<MaterialBuilder>();
+            for (int i = 0; i < finalMdbMaterials.Count; i++)
+            {
+                var finalMdbMaterial = finalMdbMaterials[i];
+                var glbMaterial = new MaterialBuilder(finalMdbMaterial.MaterialName)
+                    .WithMetallicRoughness(0, 1f)
+                    .WithDoubleSide(true)
+                    .WithSpecularColor(null, new(0, 0, 0));
+
+                glbMaterial.Extras = new JsonObject
+                {
+                    ["TextureName"] = Path.GetFileNameWithoutExtension(finalMdbMaterial.TextureName)
+                };
+
+                try
+                {
+                    var pngBytes = DDSUtils.ConvertDdsToPngBytes(Path.Combine(textureDirectory, Path.ChangeExtension(finalMdbMaterial.TextureName, "dds")));
+                    var imageBuilder = ImageBuilder.From(pngBytes, Path.GetFileNameWithoutExtension(finalMdbMaterial.TextureName));
+                    glbMaterial.WithChannelImage(KnownChannel.BaseColor, imageBuilder);
+                }
+                catch (FileNotFoundException) { } // No texture for the material, we keep going
+                finally
+                {
+                    glbMaterials.Add(glbMaterial);
+                }
+            }
+            return glbMaterials;
+        }
+
+        private static void ReorganizeTextureIndex(MdbMesh mesh, IList<MdbMaterial> finalMdbMaterials)
+        {
+            for (int i = 0; i < mesh.MeshModels.Count; i++)
+            {
+                var meshModel = mesh.MeshModels[i];
+                for (int j = 0; j < meshModel.MdbTriangles.Count; j++)
+                {
+                    var textureIndex = meshModel.MdbTriangles[j].TextureIndex;
+                    if (textureIndex < mesh.Materials.Count)
+                    {
+                        var mat = mesh.Materials[textureIndex];
+                        for (ushort k = 0; k < finalMdbMaterials.Count; k++)
+                        {
+                            if (mat.MaterialName == finalMdbMaterials[k].MaterialName)
+                            {
+                                var mdbTriangle = meshModel.MdbTriangles[j];
+                                meshModel.MdbTriangles[j] = new(mdbTriangle.P0, mdbTriangle.P1, mdbTriangle.P2, k);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void WriteMaterialsToNewMtl(IList<MdbMaterial> finalMdbMaterials, string mtlPath, string textureDirectory)
+        {
             using (var mtlWriter = new StreamWriter(File.Open(mtlPath, FileMode.Create, FileAccess.ReadWrite)))
             {
                 for (int i = 0; i < finalMdbMaterials.Count; i++)
@@ -263,106 +364,114 @@ namespace TPToolkitLib
             }
         }
 
-        private static void WriteMeshesToObj(IEnumerable<MdbMesh> meshes, string objFilePath, string mtlPath)
+        private static void WriteMeshesToNewObj(IEnumerable<MdbMesh> meshes, string objFilePath, string mtlFilePath)
         {
             using (var objWriter = new StreamWriter(File.Open(objFilePath, FileMode.Create, FileAccess.ReadWrite)))
             {
-                objWriter.WriteLine($"mtllib {Path.GetFileName(mtlPath)}");
+                objWriter.WriteLine($"mtllib {Path.GetFileName(mtlFilePath)}");
                 int vCount = 1;
                 foreach (var mesh in meshes)
                 {
-                    for (int i = 0; i < mesh.MeshModels.Count; i++)
-                    {
-                        var meshModel = mesh.MeshModels[i];
-                        objWriter.WriteLine($"g {mesh.GroupName}_{i}");
-                        objWriter.WriteLine($"o {mesh.GroupName}_{i}");
-                        for (int j = 0; j < meshModel.MdbVertices.Count; j++)
-                        {
-                            var mdbVertice = meshModel.MdbVertices[j];
-                            objWriter.WriteLine($"v {mdbVertice.X} {mdbVertice.Z} {-mdbVertice.Y}");
-                            objWriter.WriteLine($"vt {mdbVertice.U} {-mdbVertice.V}");
-                            objWriter.WriteLine($"vn {-Math.Sin(mdbVertice.NX)} {Math.Sin(mdbVertice.NY)} {-Math.Cos(mdbVertice.NX)}");
-                        }
-                        var triGroups = meshModel.MdbTriangles.GroupBy((t) => t.TextureIndex);
-                        foreach (var triGroup in triGroups)
-                        {
-                            var mat = mesh.Materials[triGroup.Key];
-                            objWriter.WriteLine($"usemtl {mat.MaterialName}");
-                            foreach (var mdbTriangle in triGroup)
-                            {
-                                var p0 = mdbTriangle.P0 + vCount;
-                                var p1 = mdbTriangle.P1 + vCount;
-                                var p2 = mdbTriangle.P2 + vCount;
-                                objWriter.WriteLine($"f {p2}/{p2}/{p2} {p1}/{p1}/{p1} {p0}/{p0}/{p0}");
-                            }
-                        }
-                        vCount += meshModel.MdbVertices.Count;
-                    }
+                    WriteMeshToObj(mesh, objWriter, ref vCount);
                 }
             }
         }
 
-        private static void WriteMeshesToGlb(IEnumerable<MdbMesh> meshes, string glbPath, string textureDirectory)
+        private static void WriteMeshToNewObj(MdbMesh mesh, string objFilePath, string mtlFilePath)
+        {
+            using (var objWriter = new StreamWriter(File.Open(objFilePath, FileMode.Create, FileAccess.ReadWrite)))
+            {
+                objWriter.WriteLine($"mtllib {Path.GetFileName(mtlFilePath)}");
+                int vCount = 1;
+                WriteMeshToObj(mesh, objWriter, ref vCount);
+            }
+        }
+
+        private static void WriteMeshToObj(MdbMesh mesh, StreamWriter objWriter, ref int vCount)
+        {
+            for (int i = 0; i < mesh.MeshModels.Count; i++)
+            {
+                var meshModel = mesh.MeshModels[i];
+                objWriter.WriteLine($"g {mesh.GroupName}_{i}");
+                objWriter.WriteLine($"o {mesh.GroupName}_{i}");
+                for (int j = 0; j < meshModel.MdbVertices.Count; j++)
+                {
+                    var mdbVertice = meshModel.MdbVertices[j];
+                    objWriter.WriteLine($"v {mdbVertice.X} {mdbVertice.Z} {-mdbVertice.Y}");
+                    objWriter.WriteLine($"vt {mdbVertice.U} {-mdbVertice.V}");
+                    objWriter.WriteLine($"vn {-Math.Sin(mdbVertice.NX)} {Math.Sin(mdbVertice.NY)} {-Math.Cos(mdbVertice.NX)}");
+                }
+                var triGroups = meshModel.MdbTriangles.GroupBy((t) => t.TextureIndex);
+                foreach (var triGroup in triGroups)
+                {
+                    var mat = mesh.Materials[triGroup.Key];
+                    objWriter.WriteLine($"usemtl {mat.MaterialName}");
+                    foreach (var mdbTriangle in triGroup)
+                    {
+                        var p0 = mdbTriangle.P0 + vCount;
+                        var p1 = mdbTriangle.P1 + vCount;
+                        var p2 = mdbTriangle.P2 + vCount;
+                        objWriter.WriteLine($"f {p2}/{p2}/{p2} {p1}/{p1}/{p1} {p0}/{p0}/{p0}");
+                    }
+                }
+                vCount += meshModel.MdbVertices.Count;
+            }
+        }
+
+        private static void WriteMeshesToNewGlb(IEnumerable<MdbMesh> meshes, string glbFilePath, string textureDirectory)
         {
             var finalMdbMaterials = GetFinalMdbMaterials(meshes);
             var glbScene = new SceneBuilder();
-            var glbMaterials = new List<MaterialBuilder>();
-            for (int i = 0; i < finalMdbMaterials.Count; i++)
+            var glbMaterials = GetFinalGlbMaterials(finalMdbMaterials, textureDirectory);
+            foreach (var mesh in meshes)
             {
-                var finalMdbMaterial = finalMdbMaterials[i];
-                var glbMaterial = new MaterialBuilder(finalMdbMaterial.MaterialName)
-                    .WithMetallicRoughness(0, 1f);
-
-                glbMaterial.Extras = new JsonObject
-                {
-                    ["TextureName"] = Path.GetFileNameWithoutExtension(finalMdbMaterial.TextureName)
-                };
-
-                try
-                {
-                    var pngBytes = DDSUtils.ConvertDdsToPngBytes(textureDirectory + Path.ChangeExtension(finalMdbMaterial.TextureName, "dds"));
-                    var imageBuilder = ImageBuilder.From(pngBytes, Path.GetFileNameWithoutExtension(finalMdbMaterial.TextureName));
-                    glbMaterial.WithChannelImage(KnownChannel.BaseColor, imageBuilder);
-                }
-                finally
-                {
-                    glbMaterials.Add(glbMaterial);
-                }
+                ReorganizeTextureIndex(mesh, finalMdbMaterials);
+                AddMeshToGlbScene(mesh, glbScene, glbMaterials);
             }
-            foreach (var mdbMesh in meshes)
+            glbScene.ToGltf2().SaveGLB(glbFilePath);
+        }
+
+        private static void WriteMeshToNewGlb(MdbMesh mesh, string glbFilePath, string textureDirectory)
+        {
+            var glbScene = new SceneBuilder();
+            var glbMaterials = GetFinalGlbMaterials(mesh.Materials, textureDirectory);
+            ReorganizeTextureIndex(mesh, mesh.Materials);
+            AddMeshToGlbScene(mesh, glbScene, glbMaterials);
+            glbScene.ToGltf2().SaveGLB(glbFilePath);
+        }
+
+        private static void AddMeshToGlbScene(MdbMesh mesh, SceneBuilder glbScene, IList<MaterialBuilder> glbMaterials)
+        {
+            for (int j = 0; j < mesh.MeshModels.Count; j++)
             {
-                for (int j = 0; j < mdbMesh.MeshModels.Count; j++)
+                var meshModel = mesh.MeshModels[j];
+                var finalGroupName = $"{mesh.GroupName}_{j}";
+                var glbNode = new NodeBuilder(finalGroupName);
+                var glbMesh = new MeshBuilder<VertexPositionNormal, VertexColor1Texture1, VertexEmpty>(finalGroupName);
+                for (int k = 0; k < meshModel.MdbTriangles.Count; k++)
                 {
-                    var meshModel = mdbMesh.MeshModels[j];
-                    var finalGroupName = $"{mdbMesh.GroupName}_{j}";
-                    var glbNode = new NodeBuilder(finalGroupName);
-                    var glbMesh = new MeshBuilder<VertexPositionNormal, VertexColor1Texture1, VertexEmpty>(finalGroupName);
-                    for (int k = 0; k < meshModel.MdbTriangles.Count; k++)
-                    {
-                        var mdbTriangle = meshModel.MdbTriangles[k];
-                        var v0 = meshModel.MdbVertices[mdbTriangle.P0];
-                        var v1 = meshModel.MdbVertices[mdbTriangle.P1];
-                        var v2 = meshModel.MdbVertices[mdbTriangle.P2];
-                        var pos0 = new Vector3(v0.X, v0.Z, -v0.Y);
-                        var pos1 = new Vector3(v1.X, v1.Z, -v1.Y);
-                        var pos2 = new Vector3(v2.X, v2.Z, -v2.Y);
-                        var n0 = Vector3.Normalize(new Vector3((float)-Math.Sin(v0.NX), (float)Math.Sin(v0.NY), (float)-Math.Cos(v0.NX)));
-                        var n1 = Vector3.Normalize(new Vector3((float)-Math.Sin(v1.NX), (float)Math.Sin(v1.NY), (float)-Math.Cos(v1.NX)));
-                        var n2 = Vector3.Normalize(new Vector3((float)-Math.Sin(v2.NX), (float)Math.Sin(v2.NY), (float)-Math.Cos(v2.NX)));
-                        var glbPrim = glbMesh.UsePrimitive(glbMaterials[mdbTriangle.TextureIndex]);
-                        var p0 = new VertexBuilder<VertexPositionNormal, VertexColor1Texture1, VertexEmpty>
-                            (new(pos0, n0), new VertexColor1Texture1(new(v0.R / 255f, v0.G / 255f, v0.B / 255f, v0.A / 255f), new(v0.U, v0.V)));
-                        var p1 = new VertexBuilder<VertexPositionNormal, VertexColor1Texture1, VertexEmpty>
-                            (new(pos1, n1), new VertexColor1Texture1(new(v1.R / 255f, v1.G / 255f, v1.B / 255f, v1.A / 255f), new(v1.U, v1.V)));
-                        var p2 = new VertexBuilder<VertexPositionNormal, VertexColor1Texture1, VertexEmpty>
-                            (new(pos2, n2), new VertexColor1Texture1(new(v2.R / 255f, v2.G / 255f, v2.B / 255f, v2.A / 255f), new(v2.U, v2.V)));
-                        glbPrim.AddTriangle(p2, p1, p0);
-                    }
-                    glbScene.AddNode(glbNode);
-                    glbScene.AddRigidMesh(glbMesh, glbNode);
+                    var mdbTriangle = meshModel.MdbTriangles[k];
+                    var v0 = meshModel.MdbVertices[mdbTriangle.P0];
+                    var v1 = meshModel.MdbVertices[mdbTriangle.P1];
+                    var v2 = meshModel.MdbVertices[mdbTriangle.P2];
+                    var pos0 = new Vector3(v0.X, v0.Z, -v0.Y);
+                    var pos1 = new Vector3(v1.X, v1.Z, -v1.Y);
+                    var pos2 = new Vector3(v2.X, v2.Z, -v2.Y);
+                    var n0 = Vector3.Normalize(new Vector3((float)-Math.Sin(v0.NX), (float)Math.Sin(v0.NY), (float)-Math.Cos(v0.NX)));
+                    var n1 = Vector3.Normalize(new Vector3((float)-Math.Sin(v1.NX), (float)Math.Sin(v1.NY), (float)-Math.Cos(v1.NX)));
+                    var n2 = Vector3.Normalize(new Vector3((float)-Math.Sin(v2.NX), (float)Math.Sin(v2.NY), (float)-Math.Cos(v2.NX)));
+                    var glbPrim = glbMesh.UsePrimitive(glbMaterials[mdbTriangle.TextureIndex]);
+                    var p0 = new VertexBuilder<VertexPositionNormal, VertexColor1Texture1, VertexEmpty>
+                        (new(pos0, n0), new VertexColor1Texture1(new(v0.R / 255f, v0.G / 255f, v0.B / 255f, v0.A / 255f), new(v0.U, v0.V)));
+                    var p1 = new VertexBuilder<VertexPositionNormal, VertexColor1Texture1, VertexEmpty>
+                        (new(pos1, n1), new VertexColor1Texture1(new(v1.R / 255f, v1.G / 255f, v1.B / 255f, v1.A / 255f), new(v1.U, v1.V)));
+                    var p2 = new VertexBuilder<VertexPositionNormal, VertexColor1Texture1, VertexEmpty>
+                        (new(pos2, n2), new VertexColor1Texture1(new(v2.R / 255f, v2.G / 255f, v2.B / 255f, v2.A / 255f), new(v2.U, v2.V)));
+                    glbPrim.AddTriangle(p2, p1, p0);
                 }
+                glbScene.AddNode(glbNode);
+                glbScene.AddRigidMesh(glbMesh, glbNode);
             }
-            glbScene.ToGltf2().SaveGLB(glbPath);
         }
     }
 }
