@@ -522,13 +522,13 @@ namespace TPToolkitLib.Mesh
                                 group.Item2.Add(matGroup);
                                 matGroup.Item2 = new List<ObjTriangle>();
                             }
-                            //Add the group to the group list if it's not empty. The empty mat group check is done in the usemtl block.
+                            //Add the group to the group list if it's not empty.
                             if (group.Item2.Count > 0)
                             {
                                 groups.Add(group);
                                 group.Item2 = new List<(string, List<ObjTriangle>)>();
                             }
-                            group.Item1 = line.Substring(2);
+                            group.Item1 = groupName;
                         }
 
                     }

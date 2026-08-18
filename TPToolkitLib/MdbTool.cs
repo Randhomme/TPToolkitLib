@@ -9,7 +9,9 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using TPToolkitLib.Mesh.Classes;
+using TPToolkitLib.Mesh.Structs;
 using TPToolkitLib.Utils;
 
 namespace TPToolkitLib
@@ -18,13 +20,13 @@ namespace TPToolkitLib
     {
         public static void XMdbTo1Obj(string[] mdbFilePaths, string objFilePath, string textureDirectory, bool lods)
         {
-            var meshes = MeshFromMdbs(mdbFilePaths, lods);
+            var meshes = MeshesFromMdbs(mdbFilePaths, lods);
             MeshesToObj(meshes, objFilePath, textureDirectory);
         }
 
         public static void XMdbTo1Glb(string[] mdbFilePaths, string glbFilePath, string textureDirectory, bool lods)
         {
-            var meshes = MeshFromMdbs(mdbFilePaths, lods);
+            var meshes = MeshesFromMdbs(mdbFilePaths, lods);
             MeshesToGlb(meshes, glbFilePath, textureDirectory);
         }
 
@@ -50,7 +52,16 @@ namespace TPToolkitLib
             }
         }
 
-        public static IEnumerable<MdbMesh> MeshFromMdbs(string[] mdbFilePaths, bool lods)
+        public static void XObjToXMdb(string[] objFilePaths, string mdbFolderPath)
+        {
+            for (int i = 0; i < objFilePaths.Length; i++)
+            {
+                var objFilePath = objFilePaths[i];
+                var meshes = MeshesFromObj(objFilePath);
+            }
+        }
+
+        public static IEnumerable<MdbMesh> MeshesFromMdbs(string[] mdbFilePaths, bool lods)
         {
             IList<MdbMesh> mdbMeshes = [];
             for (int i = 0; i < mdbFilePaths.Length; i++)
@@ -61,22 +72,28 @@ namespace TPToolkitLib
             return mdbMeshes;
         }
 
+
         public static MdbMesh MeshFromMdb(string mdbFilePath, bool lods)
         {
             string groupName = Path.GetFileNameWithoutExtension(mdbFilePath);
-            var mesh = new MdbMesh(groupName);
-            ReadMdb(mesh, mdbFilePath, lods);
-            return mesh;
+            return ReadMdb(groupName, mdbFilePath, lods);
+        }
+
+        public static IEnumerable<MdbMesh> MeshesFromObj(string objFilePath)
+        {
+            IList<MdbMesh> mdbMeshes = [];
+            var objGroups = ReadObj(objFilePath);
+            return mdbMeshes;
         }
 
         public static void MeshesToObj(IEnumerable<MdbMesh> meshes, string objFilePath, string textureDirectory)
         {
-            string mtlPath = Path.ChangeExtension(objFilePath, "mtl");
+            string mtlFilePath = Path.ChangeExtension(objFilePath, "mtl");
             var finalMdbMaterials = GetFinalMdbMaterials(meshes);
             // Write mtl
-            WriteMaterialsToNewMtl(finalMdbMaterials, mtlPath, textureDirectory);
+            WriteMaterialsToNewMtl(finalMdbMaterials, mtlFilePath, textureDirectory);
             // Write obj
-            WriteMeshesToNewObj(meshes, objFilePath, mtlPath);
+            WriteMeshesToNewObj(meshes, objFilePath, mtlFilePath);
         }
 
         public static void MeshToObj(MdbMesh mesh, string objFilePath, string textureDirectory)
@@ -98,8 +115,9 @@ namespace TPToolkitLib
             WriteMeshToNewGlb(mesh, glbFilePath, textureDirectory);
         }
 
-        private static void ReadMdb(MdbMesh mesh, string mdbFilePath, bool lods)
+        private static MdbMesh ReadMdb(string groupName, string mdbFilePath, bool lods)
         {
+            var mesh = new MdbMesh(groupName);
             using (BinaryReader mdbReader = new BinaryReader(File.OpenRead(mdbFilePath)))
             {
                 uint modelCount, modelLength, modelStart, matCount, vCount, tCount;
@@ -270,6 +288,164 @@ namespace TPToolkitLib
                     }
                 }
             }
+            return mesh;
+        }
+
+        private static ObjScene ReadObj(string objFilePath)
+        {
+            char[] separator = { ' ' };
+            string mtlFileName = string.Empty;
+            var objScene = new ObjScene();
+            ObjGroup currentObjGroup = new(string.Empty);
+            ObjMaterialGroup currentObjMaterialGroup = new("NULL");
+            using (var objReader = new StreamReader(File.OpenRead(objFilePath)))
+            {
+                uint lineNumber = 0;
+                while (!objReader.EndOfStream)
+                {
+                    var line = objReader.ReadLine();
+                    lineNumber += 1;
+                    // v
+                    if(line.StartsWith("v ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var s = line.Split(separator, 4);
+                            objScene.V.Add(new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3])));
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new($"Invalid vertex at line {lineNumber} : {ex.Message}", ex);
+                        }
+                    }
+                    // vt
+                    else if(line.StartsWith("vt ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var s = line.Split(separator, 3);
+                            objScene.VT.Add(new Vector2(float.Parse(s[1]), float.Parse(s[2])));
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new($"Invalid vertex texture at line {lineNumber} : {ex.Message}", ex);
+                        }
+                    }
+                    // vn
+                    else if(line.StartsWith("vn ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var s = line.Split(separator, 4);
+                            objScene.VN.Add(new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3])));
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new($"Invalid normal at line {lineNumber} : {ex.Message}", ex);
+                        }
+                    }
+                    // f
+                    else if(line.StartsWith("f ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var s = line.Split(separator);
+                            if (s.Length > 4)
+                                throw new("It has more than 3 points");
+                            var p0 = s[1].Split('/');
+                            var p1 = s[2].Split('/');
+                            var p2 = s[3].Split('/');
+                            var tri = new ObjTriangle();
+                            for (int i = 0; i < Math.Min(p0.Length, 3); i++)
+                            {
+                                int.TryParse(p0[i], out tri.P0[i]);
+                            }
+                            for (int i = 0; i < Math.Min(p1.Length, 3); i++)
+                            {
+                                int.TryParse(p1[i], out tri.P1[i]);
+                            }
+                            for (int i = 0; i < Math.Min(p2.Length, 3); i++)
+                            {
+                                int.TryParse(p2[i], out tri.P2[i]);
+                            }
+                            currentObjMaterialGroup.Triangles.Add(tri);
+                        }
+                        catch(Exception ex)
+                        {
+                            throw new($"Invalid triangle line {lineNumber} : {ex.Message}");
+                        }
+                    }
+                    // group/object
+                    else if(line.StartsWith("g ", StringComparison.OrdinalIgnoreCase) || line.StartsWith("o ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var objGroupName = line.Substring(2);
+                        // if it's not the same group (if it is, do nothing)
+                        if (!string.Equals(objGroupName, currentObjGroup.GroupName))
+                        {
+                            var groupExists = false;
+                            foreach (var tempObjGroup in objScene.ObjGroups)
+                            {
+                                if (tempObjGroup.GroupName.Equals(objGroupName))
+                                {
+                                    groupExists = true;
+                                    currentObjGroup = tempObjGroup;
+                                    break;
+                                }
+                            }
+                            // if it's a new group
+                            if (!groupExists)
+                            {
+                                // Add the current mat group to the current group before creating a new one
+                                if (currentObjMaterialGroup.Triangles.Count > 0)
+                                {
+                                    currentObjGroup.MaterialGroups.Add(currentObjMaterialGroup);
+                                }
+                                currentObjMaterialGroup = new(currentObjMaterialGroup.MaterialName);
+                                // Add the group to the group list if it's not empty
+                                if (currentObjGroup.MaterialGroups.Count > 0)
+                                {
+                                    objScene.ObjGroups.Add(currentObjGroup);
+                                }
+                                currentObjGroup = new(objGroupName);
+                            }
+                        }
+                    }
+                    // usemtl
+                    else if(line.StartsWith("usemtl ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Add the current mat group to the current group before creating a new one
+                        if (currentObjMaterialGroup.Triangles.Count > 0)
+                        {
+                            currentObjGroup.MaterialGroups.Add(currentObjMaterialGroup);
+                        }
+                        currentObjMaterialGroup = new(line.Substring(7));
+                    }
+                    // mtllb (mtl file name)
+                    else if(line.StartsWith("mtllib "))
+                    {
+                        mtlFileName = line.Substring(7);
+                    }
+                }
+            }
+            // Add the last group if not empty
+            // Add the current mat group to the current group before creating a new one
+            if (currentObjMaterialGroup.Triangles.Count > 0)
+            {
+                currentObjGroup.MaterialGroups.Add(currentObjMaterialGroup);
+            }
+            // Add the group to the group list if it's not empty
+            if (currentObjGroup.MaterialGroups.Count > 0)
+            {
+                objScene.ObjGroups.Add(currentObjGroup);
+            }
+            var mtlFilePath = string.IsNullOrWhiteSpace(mtlFileName) ? Path.ChangeExtension(objFilePath, "mtl") : Path.Combine(Path.GetDirectoryName(objFilePath), mtlFileName);
+            ReadMtl(mtlFilePath);
+            return objScene;
+        }
+
+        private static void ReadMtl(string mtlFilePath)
+        {
+
         }
 
         private static IList<MdbMaterial> GetFinalMdbMaterials(IEnumerable<MdbMesh> meshes)
@@ -471,6 +647,20 @@ namespace TPToolkitLib
                 }
                 glbScene.AddNode(glbNode);
                 glbScene.AddRigidMesh(glbMesh, glbNode);
+            }
+        }
+
+        private static string RealGroupName(string groupname)
+        {
+            int index = groupname.LastIndexOf('_');
+            if (index != -1)
+            {
+                string temp = groupname.Substring(index + 1);
+                return int.TryParse(temp, out _) ? groupname.Remove(index) : groupname;
+            }
+            else
+            {
+                return groupname;
             }
         }
     }

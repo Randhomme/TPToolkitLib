@@ -43,7 +43,7 @@ namespace TPToolkitLibUITest
             var sfd = new SaveFileDialog
             {
                 DefaultExt = "glb",
-                Filter = "GL Transmission Format Binary (*.glb)|*.glb|Object file (*.obj)|*.obj",
+                Filter = "GL Transmission Format Binary |*.glb|Object file |*.obj",
             };
             if (ofd.ShowDialog() == true && sfd.ShowDialog() == true)
             {
@@ -91,12 +91,33 @@ namespace TPToolkitLibUITest
             };
             var sfbd = new WF.FolderBrowserDialog()
             {
-                Description = "Select the TPGame folder",
+                Description = "Select a folder to export",
                 ShowNewFolderButton = false,
             };
             if (ofd.ShowDialog() == true && sfbd.ShowDialog() == WF.DialogResult.OK)
             {
                 MdbTool.XMdbToXGlb(ofd.FileNames, sfbd.SelectedPath, "C:\\Users\\User0\\Documents\\Desktop\\TreasurePlanet\\TP_Game_ORIGINAL\\BD_Textures", true);
+            }
+        }
+
+        // X obj to X mdb
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog()
+            {
+                Multiselect = true,
+                DefaultExt = ".obj",
+                Filter = "Object file |*.obj",
+                Title = "Select objs",
+            };
+            var sfbd = new WF.FolderBrowserDialog()
+            {
+                Description = "Select a folder to export",
+                ShowNewFolderButton = false,
+            };
+            if (ofd.ShowDialog() == true && sfbd.ShowDialog() == WF.DialogResult.OK)
+            {
+                MdbTool.XObjToXMdb(ofd.FileNames, sfbd.SelectedPath);
             }
         }
     }
