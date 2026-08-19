@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 
-namespace TPShipToolkit.Utils
+namespace TPToolkitLib.Utils
 {
     /// <summary>
-    /// From <see href="https://stackoverflow.com/a/7048016"></see>
+    /// Source - <see href="https://stackoverflow.com/a/7048016"></see>
     /// </summary>
     public static class NaturalStringComparer
     {
@@ -123,4 +124,24 @@ namespace TPShipToolkit.Utils
             return 0;
         }
     }
+
+    /// <summary>
+    /// Source - <see href="https://stackoverflow.com/a/7048016"></see>
+    /// </summary>
+
+    public class CustomComparer<T> : IComparer<T>
+    {
+        private Comparison<T> _comparison;
+
+        public CustomComparer(Comparison<T> comparison)
+        {
+            _comparison = comparison;
+        }
+
+        public int Compare(T x, T y)
+        {
+            return _comparison(x, y);
+        }
+    }
+
 }

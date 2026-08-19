@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using TPToolkitLib.Mesh.Structs;
-using TPShipToolkit.Utils;
+using TPToolkitLib.Utils;
 
 namespace TPToolkitLib.Mesh
 {
