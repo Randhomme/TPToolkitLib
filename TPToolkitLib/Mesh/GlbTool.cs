@@ -588,7 +588,7 @@ namespace TPToolkitLib.Mesh
             int instanceIndex = 0, ctCount = 0, blockLength0;
             float minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0;
             long pos, currentPos = 0;
-            IMeshBuilder<MaterialBuilder> mesh0 = null;
+            IMeshBuilder<MaterialBuilder>? mesh0 = null;
             List <List<(int A, int B, int C)>> cTriangles = new();
             var box = new CollisionBox();
             mdbWriter.Write(0);
