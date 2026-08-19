@@ -491,7 +491,8 @@ namespace TPToolkitLib
         private static IEnumerable<MdbMesh> ObjSceneToMdbMeshes(ObjScene objScene)
         {
             IList<MdbMesh> mdbMeshes = [];
-            var groups = objScene.ObjGroups.GroupBy((g) => RealGroupName(g.GroupName));
+            var sortedGroups = objScene.ObjGroups.OrderBy((og) => og.GroupName, new CustomComparer<string>(NaturalStringComparer.CompareNatural));
+            var groups = sortedGroups.GroupBy((g) => RealGroupName(g.GroupName));
             foreach (var group in groups)
             {
                 var mdbMesh = new MdbMesh(group.Key);
