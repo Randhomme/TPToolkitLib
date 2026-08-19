@@ -2,14 +2,13 @@
 using SharpGLTF.Geometry.VertexTypes;
 using SharpGLTF.Materials;
 using SharpGLTF.Scenes;
-using SharpGLTF.Schema2;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using TPToolkitLib.Mesh.Classes;
 using TPToolkitLib.Mesh.Structs;
 using TPToolkitLib.Utils;
@@ -58,6 +57,11 @@ namespace TPToolkitLib
             {
                 var objFilePath = objFilePaths[i];
                 var meshes = MeshesFromObj(objFilePath);
+                foreach (var mdbMesh in meshes)
+                {
+                    var mdbFilePath = Path.Combine(mdbFolderPath, Path.ChangeExtension(mdbMesh.GroupName, "mdb"));
+                    MeshToMdb(mdbMesh, mdbFilePath);
+                }
             }
         }
 
@@ -72,7 +76,6 @@ namespace TPToolkitLib
             return mdbMeshes;
         }
 
-
         public static MdbMesh MeshFromMdb(string mdbFilePath, bool lods)
         {
             string groupName = Path.GetFileNameWithoutExtension(mdbFilePath);
@@ -81,43 +84,47 @@ namespace TPToolkitLib
 
         public static IEnumerable<MdbMesh> MeshesFromObj(string objFilePath)
         {
-            IList<MdbMesh> mdbMeshes = [];
-            var objGroups = ReadObj(objFilePath);
-            return mdbMeshes;
+            var objScene = ReadObj(objFilePath);
+            return ObjSceneToMdbMeshes(objScene);
         }
 
-        public static void MeshesToObj(IEnumerable<MdbMesh> meshes, string objFilePath, string textureDirectory)
+        public static void MeshesToObj(IEnumerable<MdbMesh> mdbMeshes, string objFilePath, string textureDirectory)
         {
             string mtlFilePath = Path.ChangeExtension(objFilePath, "mtl");
-            var finalMdbMaterials = GetFinalMdbMaterials(meshes);
+            var finalMdbMaterials = GetFinalMdbMaterials(mdbMeshes);
             // Write mtl
             WriteMaterialsToNewMtl(finalMdbMaterials, mtlFilePath, textureDirectory);
             // Write obj
-            WriteMeshesToNewObj(meshes, objFilePath, mtlFilePath);
+            WriteMeshesToNewObj(mdbMeshes, objFilePath, mtlFilePath);
         }
 
-        public static void MeshToObj(MdbMesh mesh, string objFilePath, string textureDirectory)
+        public static void MeshToObj(MdbMesh mdbMesh, string objFilePath, string textureDirectory)
         {
             string mtlFilePath = Path.ChangeExtension(objFilePath, "mtl");
             // Write mtl
-            WriteMaterialsToNewMtl(mesh.Materials, mtlFilePath, textureDirectory);
+            WriteMaterialsToNewMtl(mdbMesh.Materials, mtlFilePath, textureDirectory);
             // Write obj
-            WriteMeshToNewObj(mesh, objFilePath, mtlFilePath);
+            WriteMeshToNewObj(mdbMesh, objFilePath, mtlFilePath);
         }
 
-        public static void MeshesToGlb(IEnumerable<MdbMesh> meshes, string glbFilePath, string textureDirectory)
+        public static void MeshesToGlb(IEnumerable<MdbMesh> mdbMeshes, string glbFilePath, string textureDirectory)
         {
-            WriteMeshesToNewGlb(meshes, glbFilePath, textureDirectory);
+            WriteMeshesToNewGlb(mdbMeshes, glbFilePath, textureDirectory);
         }
 
-        public static void MeshToGlb(MdbMesh mesh, string glbFilePath, string textureDirectory)
+        public static void MeshToGlb(MdbMesh mdbMesh, string glbFilePath, string textureDirectory)
         {
-            WriteMeshToNewGlb(mesh, glbFilePath, textureDirectory);
+            WriteMeshToNewGlb(mdbMesh, glbFilePath, textureDirectory);
+        }
+
+        public static void MeshToMdb(MdbMesh mdbMesh, string mdbFilePath)
+        {
+            WriteMeshToNewMdb(mdbMesh, mdbFilePath);
         }
 
         private static MdbMesh ReadMdb(string groupName, string mdbFilePath, bool lods)
         {
-            var mesh = new MdbMesh(groupName);
+            var mdbMesh = new MdbMesh(groupName);
             using (BinaryReader mdbReader = new BinaryReader(File.OpenRead(mdbFilePath)))
             {
                 uint modelCount, modelLength, modelStart, matCount, vCount, tCount;
@@ -245,7 +252,7 @@ namespace TPToolkitLib
                         {
                             throw new Exception("Skipped\nUnable to reach the end of model " + i + " in the file.\n");
                         }
-                        mesh.MeshModels.Add(meshModel);
+                        mdbMesh.MeshModels.Add(meshModel);
                     }
                 }
 
@@ -278,7 +285,7 @@ namespace TPToolkitLib
                         mat.MaterialName = Path.GetFileNameWithoutExtension
                             (string.Join("_", mat.TextureName.Split(separator)));
                         //add to current mat
-                        mesh.Materials.Add(mat);
+                        mdbMesh.Materials.Add(mat);
                         //skip 72 bytes (material data)
                         mdbReader.BaseStream.Seek(72, SeekOrigin.Current);
                     }
@@ -288,7 +295,7 @@ namespace TPToolkitLib
                     }
                 }
             }
-            return mesh;
+            return mdbMesh;
         }
 
         private static ObjScene ReadObj(string objFilePath)
@@ -324,7 +331,7 @@ namespace TPToolkitLib
                         try
                         {
                             var s = line.Split(separator, 3);
-                            objScene.VT.Add(new Vector2(float.Parse(s[1]), float.Parse(s[2])));
+                            objScene.Vt.Add(new Vector2(float.Parse(s[1]), float.Parse(s[2])));
                         }
                         catch (Exception ex)
                         {
@@ -337,7 +344,7 @@ namespace TPToolkitLib
                         try
                         {
                             var s = line.Split(separator, 4);
-                            objScene.VN.Add(new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3])));
+                            objScene.Vn.Add(new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3])));
                         }
                         catch (Exception ex)
                         {
@@ -439,13 +446,150 @@ namespace TPToolkitLib
                 objScene.ObjGroups.Add(currentObjGroup);
             }
             var mtlFilePath = string.IsNullOrWhiteSpace(mtlFileName) ? Path.ChangeExtension(objFilePath, "mtl") : Path.Combine(Path.GetDirectoryName(objFilePath), mtlFileName);
-            ReadMtl(mtlFilePath);
+            ReadMtl(mtlFilePath, objScene);
             return objScene;
         }
 
-        private static void ReadMtl(string mtlFilePath)
+        private static void ReadMtl(string mtlFilePath, ObjScene objScene)
         {
+            using(var mtlReader = new StreamReader(File.OpenRead(mtlFilePath)))
+            {
+                string line;
+                MdbMaterial? mat = null;
+                while ((line = mtlReader.ReadLine()) != null)
+                {
+                    if (line.StartsWith("newmtl ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (mat != null && !objScene.Materials.Any(m => m.MaterialName.Equals(mat.MaterialName, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            if (objScene.Materials.Count > ushort.MaxValue)
+                                throw new Exception("Material count can't exceed 65536.");
+                            objScene.Materials.Add(mat);
+                        }
+                        mat = new(line.Substring(7), "NULL");
+                    }
+                    else if (line.StartsWith("map_kd ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var textureName = Path.GetFileNameWithoutExtension(line.Substring(7));
+                        if (mat != null && !textureName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                            mat.TextureName = Path.ChangeExtension(textureName, "tga");
+                    }
+                }
+                //add the last mat
+                if (mat != null && !objScene.Materials.Any(m => m.MaterialName.Equals(mat.MaterialName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (objScene.Materials.Count > ushort.MaxValue)
+                        throw new Exception("Material count can't exceed 65536.");
+                    objScene.Materials.Add(mat);
+                }
+            }
+        }
 
+        private static IEnumerable<MdbMesh> ObjSceneToMdbMeshes(ObjScene objScene)
+        {
+            IList<MdbMesh> mdbMeshes = [];
+            var groups = objScene.ObjGroups.GroupBy((g) => RealGroupName(g.GroupName));
+            foreach (var group in groups)
+            {
+                var mdbMesh = new MdbMesh(group.Key);
+                foreach (var objGroup in group)
+                {
+                    var mdbMeshModel = new MdbMeshModel();
+                    IList<int[]> currentObjPoints = []; // used for correct point indexing
+                    foreach (var objMaterialGroup in objGroup.MaterialGroups)
+                    {
+                        // get material index
+                        ushort materialIndex;
+                        bool hasFoundMaterial = false;
+                        var currentMdbMaterial = objScene.Materials.First((m) => m.MaterialName.Equals(objMaterialGroup.MaterialName, StringComparison.OrdinalIgnoreCase));
+                        for (materialIndex = 0; materialIndex < mdbMesh.Materials.Count; materialIndex++)
+                        {
+                            var mdbMaterial = mdbMesh.Materials[materialIndex];
+                            if(mdbMaterial.MaterialName.Equals(currentMdbMaterial.MaterialName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                hasFoundMaterial = true;
+                                break;
+                            }
+                        }
+                        if (!hasFoundMaterial)
+                        {
+                            mdbMesh.Materials.Add(currentMdbMaterial);
+                        }
+                        foreach (var triangle in objMaterialGroup.Triangles)
+                        {
+                            int p0Index, p1Index, p2Index;
+                            p0Index = p1Index = p2Index = 0;
+                            bool hasFoundP0, hasFoundP1, hasFoundP2;
+                            hasFoundP0 = hasFoundP1 = hasFoundP2 = false;
+                            // get real indexes
+                            for (int i = 0; i < currentObjPoints.Count; i++)
+                            {
+                                var p = currentObjPoints[i];
+                                if (PointsEquals(triangle.P0, p))
+                                {
+                                    p0Index = i;
+                                    hasFoundP0 = true;
+                                    if (hasFoundP0 && hasFoundP1 && hasFoundP2)
+                                        break;
+                                }
+                                if (PointsEquals(triangle.P1, p))
+                                {
+                                    p1Index = i;
+                                    hasFoundP1 = true;
+                                    if (hasFoundP0 && hasFoundP1 && hasFoundP2)
+                                        break;
+                                }
+                                if (PointsEquals(triangle.P2, p))
+                                {
+                                    p2Index = i;
+                                    hasFoundP2 = true;
+                                    if (hasFoundP0 && hasFoundP1 && hasFoundP2)
+                                        break;
+                                }
+                            }
+                            if (!hasFoundP2)
+                            {
+                                if (currentObjPoints.Count > ushort.MaxValue)
+                                    throw new Exception("Model vertex count exceeded 65536.\n");
+                                p2Index = currentObjPoints.Count;
+                                currentObjPoints.Add(triangle.P2);
+                            }
+                            if (!hasFoundP1)
+                            {
+                                if (currentObjPoints.Count > ushort.MaxValue)
+                                    throw new Exception("Model vertex count exceeded 65536.\n");
+                                p1Index = currentObjPoints.Count;
+                                currentObjPoints.Add(triangle.P1);
+                            }
+                            if (!hasFoundP0)
+                            {
+                                if (currentObjPoints.Count > ushort.MaxValue)
+                                    throw new Exception("Model vertex count exceeded 65536.\n");
+                                p0Index = currentObjPoints.Count;
+                                currentObjPoints.Add(triangle.P0);
+                            }
+                            mdbMeshModel.MdbTriangles.Add(new((ushort)p2Index, (ushort)p1Index, (ushort)p0Index, materialIndex));
+                        }
+                    }
+                    for(int i = 0; i < currentObjPoints.Count; i++)
+                    {
+                        var p = currentObjPoints[i];
+                        var v = objScene.V[p[0] - 1];
+                        var vt = objScene.Vt[p[1] - 1];
+                        var vn = objScene.Vn[p[2] - 1];
+                        if (vn.Z < -1)
+                            vn.Z = -1;
+                        else if (vn.Z > 1)
+                            vn.Z = 1;
+                        var nx = vn.X <= 0 ? Math.Acos(-vn.Z) : -Math.Acos(-vn.Z);
+                        var ny = Math.Asin(vn.Y);
+                        mdbMeshModel.MdbVertices.Add(new(v.X, -v.Z, v.Y, vt.X, -vt.Y, (float)nx, (float)ny, 255, 255, 255, 255));
+                    }
+                    mdbMesh.MeshModels.Add(mdbMeshModel);
+                }
+                mdbMeshes.Add(mdbMesh);
+            }
+            return mdbMeshes;
         }
 
         private static IList<MdbMaterial> GetFinalMdbMaterials(IEnumerable<MdbMesh> meshes)
@@ -496,17 +640,17 @@ namespace TPToolkitLib
             return glbMaterials;
         }
 
-        private static void ReorganizeTextureIndex(MdbMesh mesh, IList<MdbMaterial> finalMdbMaterials)
+        private static void ReorganizeTextureIndex(MdbMesh mdbMesh, IList<MdbMaterial> finalMdbMaterials)
         {
-            for (int i = 0; i < mesh.MeshModels.Count; i++)
+            for (int i = 0; i < mdbMesh.MeshModels.Count; i++)
             {
-                var meshModel = mesh.MeshModels[i];
+                var meshModel = mdbMesh.MeshModels[i];
                 for (int j = 0; j < meshModel.MdbTriangles.Count; j++)
                 {
                     var textureIndex = meshModel.MdbTriangles[j].TextureIndex;
-                    if (textureIndex < mesh.Materials.Count)
+                    if (textureIndex < mdbMesh.Materials.Count)
                     {
-                        var mat = mesh.Materials[textureIndex];
+                        var mat = mdbMesh.Materials[textureIndex];
                         for (ushort k = 0; k < finalMdbMaterials.Count; k++)
                         {
                             if (mat.MaterialName == finalMdbMaterials[k].MaterialName)
@@ -540,36 +684,36 @@ namespace TPToolkitLib
             }
         }
 
-        private static void WriteMeshesToNewObj(IEnumerable<MdbMesh> meshes, string objFilePath, string mtlFilePath)
+        private static void WriteMeshesToNewObj(IEnumerable<MdbMesh> mdbMeshes, string objFilePath, string mtlFilePath)
         {
             using (var objWriter = new StreamWriter(File.Open(objFilePath, FileMode.Create, FileAccess.ReadWrite)))
             {
                 objWriter.WriteLine($"mtllib {Path.GetFileName(mtlFilePath)}");
                 int vCount = 1;
-                foreach (var mesh in meshes)
+                foreach (var mdbMesh in mdbMeshes)
                 {
-                    WriteMeshToObj(mesh, objWriter, ref vCount);
+                    WriteMeshToObj(mdbMesh, objWriter, ref vCount);
                 }
             }
         }
 
-        private static void WriteMeshToNewObj(MdbMesh mesh, string objFilePath, string mtlFilePath)
+        private static void WriteMeshToNewObj(MdbMesh mdbMesh, string objFilePath, string mtlFilePath)
         {
             using (var objWriter = new StreamWriter(File.Open(objFilePath, FileMode.Create, FileAccess.ReadWrite)))
             {
                 objWriter.WriteLine($"mtllib {Path.GetFileName(mtlFilePath)}");
                 int vCount = 1;
-                WriteMeshToObj(mesh, objWriter, ref vCount);
+                WriteMeshToObj(mdbMesh, objWriter, ref vCount);
             }
         }
 
-        private static void WriteMeshToObj(MdbMesh mesh, StreamWriter objWriter, ref int vCount)
+        private static void WriteMeshToObj(MdbMesh mdbMesh, StreamWriter objWriter, ref int vCount)
         {
-            for (int i = 0; i < mesh.MeshModels.Count; i++)
+            for (int i = 0; i < mdbMesh.MeshModels.Count; i++)
             {
-                var meshModel = mesh.MeshModels[i];
-                objWriter.WriteLine($"g {mesh.GroupName}_{i}");
-                objWriter.WriteLine($"o {mesh.GroupName}_{i}");
+                var meshModel = mdbMesh.MeshModels[i];
+                objWriter.WriteLine($"g {mdbMesh.GroupName}_{i}");
+                objWriter.WriteLine($"o {mdbMesh.GroupName}_{i}");
                 for (int j = 0; j < meshModel.MdbVertices.Count; j++)
                 {
                     var mdbVertice = meshModel.MdbVertices[j];
@@ -580,7 +724,7 @@ namespace TPToolkitLib
                 var triGroups = meshModel.MdbTriangles.GroupBy((t) => t.TextureIndex);
                 foreach (var triGroup in triGroups)
                 {
-                    var mat = mesh.Materials[triGroup.Key];
+                    var mat = mdbMesh.Materials[triGroup.Key];
                     objWriter.WriteLine($"usemtl {mat.MaterialName}");
                     foreach (var mdbTriangle in triGroup)
                     {
@@ -594,34 +738,34 @@ namespace TPToolkitLib
             }
         }
 
-        private static void WriteMeshesToNewGlb(IEnumerable<MdbMesh> meshes, string glbFilePath, string textureDirectory)
+        private static void WriteMeshesToNewGlb(IEnumerable<MdbMesh> mdbMeshes, string glbFilePath, string textureDirectory)
         {
-            var finalMdbMaterials = GetFinalMdbMaterials(meshes);
+            var finalMdbMaterials = GetFinalMdbMaterials(mdbMeshes);
             var glbScene = new SceneBuilder();
             var glbMaterials = GetFinalGlbMaterials(finalMdbMaterials, textureDirectory);
-            foreach (var mesh in meshes)
+            foreach (var mdbMesh in mdbMeshes)
             {
-                ReorganizeTextureIndex(mesh, finalMdbMaterials);
-                AddMeshToGlbScene(mesh, glbScene, glbMaterials);
+                ReorganizeTextureIndex(mdbMesh, finalMdbMaterials);
+                AddMeshToGlbScene(mdbMesh, glbScene, glbMaterials);
             }
             glbScene.ToGltf2().SaveGLB(glbFilePath);
         }
 
-        private static void WriteMeshToNewGlb(MdbMesh mesh, string glbFilePath, string textureDirectory)
+        private static void WriteMeshToNewGlb(MdbMesh mdbMesh, string glbFilePath, string textureDirectory)
         {
             var glbScene = new SceneBuilder();
-            var glbMaterials = GetFinalGlbMaterials(mesh.Materials, textureDirectory);
-            ReorganizeTextureIndex(mesh, mesh.Materials);
-            AddMeshToGlbScene(mesh, glbScene, glbMaterials);
+            var glbMaterials = GetFinalGlbMaterials(mdbMesh.Materials, textureDirectory);
+            ReorganizeTextureIndex(mdbMesh, mdbMesh.Materials);
+            AddMeshToGlbScene(mdbMesh, glbScene, glbMaterials);
             glbScene.ToGltf2().SaveGLB(glbFilePath);
         }
 
-        private static void AddMeshToGlbScene(MdbMesh mesh, SceneBuilder glbScene, IList<MaterialBuilder> glbMaterials)
+        private static void AddMeshToGlbScene(MdbMesh mdbMesh, SceneBuilder glbScene, IList<MaterialBuilder> glbMaterials)
         {
-            for (int j = 0; j < mesh.MeshModels.Count; j++)
+            for (int j = 0; j < mdbMesh.MeshModels.Count; j++)
             {
-                var meshModel = mesh.MeshModels[j];
-                var finalGroupName = $"{mesh.GroupName}_{j}";
+                var meshModel = mdbMesh.MeshModels[j];
+                var finalGroupName = $"{mdbMesh.GroupName}_{j}";
                 var glbNode = new NodeBuilder(finalGroupName);
                 var glbMesh = new MeshBuilder<VertexPositionNormal, VertexColor1Texture1, VertexEmpty>(finalGroupName);
                 for (int k = 0; k < meshModel.MdbTriangles.Count; k++)
@@ -650,6 +794,99 @@ namespace TPToolkitLib
             }
         }
 
+        private static void WriteMeshToNewMdb(MdbMesh mdbMesh, string mdbFilePath)
+        {
+            using(var mdbWriter = new BinaryWriter(File.Open(mdbFilePath, FileMode.Create)))
+            {
+                mdbWriter.Write(0);
+                mdbWriter.Write(0);
+                mdbWriter.Write(0);
+                mdbWriter.Write(mdbMesh.MeshModels.Count);
+                for (int i = 0; i < mdbMesh.MeshModels.Count; i++)
+                {
+                    var mdbMeshModel = mdbMesh.MeshModels[i];
+                    WriteMeshModelToMdb(mdbMeshModel, mdbWriter, i);
+                }
+                mdbWriter.Write(mdbMesh.Materials.Count);
+                for (int i = 0; i < mdbMesh.Materials.Count; i++)
+                {
+                    var mdbMaterial = mdbMesh.Materials[i];
+                    WriteMaterialToMdb(mdbMaterial, mdbWriter);
+                }
+                // bones, not for now
+                mdbWriter.Write(0);
+            }
+        }
+
+        private static void WriteMeshModelToMdb(MdbMeshModel mdbMeshModel, BinaryWriter mdbWriter, int modelIndex)
+        {
+            var pos = mdbWriter.BaseStream.Position;
+            mdbWriter.Write(0);
+            mdbWriter.Write(modelIndex);
+            mdbWriter.Write(mdbMeshModel.MdbVertices.Count);
+            for (int i = 0; i < mdbMeshModel.MdbVertices.Count; i++)
+            {
+                var mdbVertice = mdbMeshModel.MdbVertices[i];
+                mdbWriter.Write(32);
+                mdbWriter.Write(mdbVertice.X);
+                mdbWriter.Write(mdbVertice.Y);
+                mdbWriter.Write(mdbVertice.Z);
+                mdbWriter.Write(mdbVertice.U);
+                mdbWriter.Write(mdbVertice.V);
+                mdbWriter.Write(mdbVertice.NX);
+                mdbWriter.Write(mdbVertice.NY);
+                mdbWriter.Write(mdbVertice.R);
+                mdbWriter.Write(mdbVertice.G);
+                mdbWriter.Write(mdbVertice.B);
+                mdbWriter.Write(mdbVertice.A);
+            }
+            mdbWriter.Write(mdbMeshModel.MdbTriangles.Count);
+            for (int i = 0; i < mdbMeshModel.MdbTriangles.Count; i++)
+            {
+                var mdbTriangle = mdbMeshModel.MdbTriangles[i];
+                mdbWriter.Write(8);
+                mdbWriter.Write(mdbTriangle.P0);
+                mdbWriter.Write(mdbTriangle.P1);
+                mdbWriter.Write(mdbTriangle.P2);
+                mdbWriter.Write(mdbTriangle.TextureIndex);
+            }
+            mdbWriter.Write(0); // animation stuff ?
+            var blockLength = (int)(mdbWriter.BaseStream.Position - pos);
+            mdbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            mdbWriter.Write(blockLength - 4);
+            mdbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteMaterialToMdb(MdbMaterial mdbMaterial, BinaryWriter mdbWriter)
+        {
+            var pos = mdbWriter.BaseStream.Position;
+            mdbWriter.Write(0);
+            mdbWriter.Write(mdbMaterial.TextureName.Length);
+            mdbWriter.Write(Encoding.Default.GetBytes(mdbMaterial.TextureName));
+            mdbWriter.Write(1.0f);
+            mdbWriter.Write(1.0f);
+            mdbWriter.Write(1.0f);
+            mdbWriter.Write(1.0f);
+            mdbWriter.Write(1.0f);
+            mdbWriter.Write(1.0f);
+            mdbWriter.Write(1.0f);
+            mdbWriter.Write(1.0f);
+            mdbWriter.Write(0.0f);
+            mdbWriter.Write(0.0f);
+            mdbWriter.Write(0.0f);
+            mdbWriter.Write(1.0f);
+            mdbWriter.Write(0.0f);
+            mdbWriter.Write(0.0f);
+            mdbWriter.Write(0.0f);
+            mdbWriter.Write(1.0f);
+            mdbWriter.Write(0.0f);
+            mdbWriter.Write(0.0f);
+            var blockLength = (int)(mdbWriter.BaseStream.Position - pos);
+            mdbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            mdbWriter.Write(blockLength - 4);
+            mdbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
         private static string RealGroupName(string groupname)
         {
             int index = groupname.LastIndexOf('_');
@@ -662,6 +899,20 @@ namespace TPToolkitLib
             {
                 return groupname;
             }
+        }
+
+        private static bool PointsEquals(int[] p0, int[] p1)
+        {
+            if (p0.Length == p1.Length)
+            {
+                for (int i = 0; i < p0.Length; i++)
+                {
+                    if (p0[i] != p1[i])
+                        return false;
+                }
+                return true;
+            }
+            return false;
         }
     }
 }
