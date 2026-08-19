@@ -974,10 +974,10 @@ namespace TPToolkitLib.Mesh
                         mdbWriter.Write((float)-Math.Acos(-pVn.Z));
                     mdbWriter.Write((float)Math.Asin(pVn.Y));
                     //rgba
-                    mdbWriter.Write((byte)255);
-                    mdbWriter.Write((byte)255);
-                    mdbWriter.Write((byte)255);
-                    mdbWriter.Write((byte)255);
+                    mdbWriter.Write(255);
+                    mdbWriter.Write(255);
+                    mdbWriter.Write(255);
+                    mdbWriter.Write(255);
                 }
                 catch
                 {
