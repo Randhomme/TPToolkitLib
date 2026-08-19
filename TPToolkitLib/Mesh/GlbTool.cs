@@ -691,6 +691,8 @@ namespace TPToolkitLib.Mesh
             {
                 logs.Report("WARNING: There is no mesh in your file for the collisions and the hitbox.\n");
                 WriteCollisionBox(mdbWriter, box, 0);
+                mdbWriter.Write(17); //max level
+                mdbWriter.Write(5);
                 mdbWriter.Write(18);
                 mdbWriter.Write(0);
             }
