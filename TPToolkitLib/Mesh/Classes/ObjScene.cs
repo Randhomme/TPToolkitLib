@@ -11,9 +11,10 @@ namespace TPToolkitLib.Mesh.Classes
     public class ObjScene
     {
         public IList<Vector3> V { get; } = [];
-        public IList<Vector2> VT { get; } = [];
-        public IList<Vector3> VN { get; } = [];
+        public IList<Vector2> Vt { get; } = [];
+        public IList<Vector3> Vn { get; } = [];
         public IList<ObjTriangle> F { get; } = [];
         public IList<ObjGroup> ObjGroups { get; } = [];
+        public IList<MdbMaterial> Materials { get; } = [];
     }
 }
