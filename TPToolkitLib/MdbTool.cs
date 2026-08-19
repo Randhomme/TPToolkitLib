@@ -9,6 +9,9 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+using TPShipToolkit.Utils;
+using TPToolkitLib.Mesh;
 using TPToolkitLib.Mesh.Classes;
 using TPToolkitLib.Mesh.Structs;
 using TPToolkitLib.Utils;
@@ -798,6 +801,9 @@ namespace TPToolkitLib
         {
             using(var mdbWriter = new BinaryWriter(File.Open(mdbFilePath, FileMode.Create)))
             {
+                float minX, minY, minZ, maxX, maxY, maxZ;
+                minX = minY = minZ = float.MaxValue;
+                maxX = maxY = maxZ = float.MinValue;
                 mdbWriter.Write(0);
                 mdbWriter.Write(0);
                 mdbWriter.Write(0);
@@ -805,7 +811,14 @@ namespace TPToolkitLib
                 for (int i = 0; i < mdbMesh.MeshModels.Count; i++)
                 {
                     var mdbMeshModel = mdbMesh.MeshModels[i];
-                    WriteMeshModelToMdb(mdbMeshModel, mdbWriter, i);
+                    if(i == 0)
+                    {
+                        WriteMeshModelToMdb(mdbMeshModel, mdbWriter, i, ref minX, ref minY, ref minZ, ref maxX, ref maxY, ref maxZ);
+                    }
+                    else
+                    {
+                        WriteMeshModelToMdb(mdbMeshModel, mdbWriter, i);
+                    }
                 }
                 mdbWriter.Write(mdbMesh.Materials.Count);
                 for (int i = 0; i < mdbMesh.Materials.Count; i++)
@@ -813,8 +826,37 @@ namespace TPToolkitLib
                     var mdbMaterial = mdbMesh.Materials[i];
                     WriteMaterialToMdb(mdbMaterial, mdbWriter);
                 }
-                // bones, not for now
+                mdbWriter.Write(0); // bones, not for now
+                WriteBoundingValuesToMdb(minX, minY, minZ, maxX, maxY, maxZ, mdbWriter);
+                var pos = mdbWriter.BaseStream.Position;
                 mdbWriter.Write(0);
+                mdbWriter.Write(1);
+                if (mdbMesh.MeshModels.Count > 0)
+                {
+                    AutoGenerateCBox(mdbMesh.CollisionBox, mdbMesh.MeshModels[0], mdbMesh.MeshModels[0].MdbTriangles);
+                    WriteCollisionBoxToMdb(mdbMesh.CollisionBox, mdbWriter, mdbMesh.MeshModels[0].MdbTriangles.Count);
+                    mdbWriter.Write(17); //max level
+                    mdbWriter.Write(5);
+                    WriteHitboxToMdb(mdbMesh.MeshModels[0], mdbWriter);
+                }
+                else
+                {
+                    WriteCollisionBoxToMdb(mdbMesh.CollisionBox, mdbWriter, mdbMesh.MeshModels[0].MdbTriangles.Count);
+                    mdbWriter.Write(17); //max level
+                    mdbWriter.Write(0);
+                    mdbWriter.Write(18);
+                    mdbWriter.Write(0);
+                }
+                var currentPos = mdbWriter.BaseStream.Position;
+                var blockLength0 = (int)(currentPos - pos);
+                mdbWriter.Write(false); // true allows correct transparency (over nebula and objects), but breaks hitbox
+                mdbWriter.BaseStream.Seek(0, SeekOrigin.Begin);
+                mdbWriter.Write(currentPos + 1);
+                mdbWriter.Write((int)currentPos - 11);
+                mdbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+                mdbWriter.Write(blockLength0);
+                mdbWriter.BaseStream.Seek(0, SeekOrigin.End);
+                WriteFinalStringsToMdb(mdbWriter);
             }
         }
 
@@ -839,6 +881,57 @@ namespace TPToolkitLib
                 mdbWriter.Write(mdbVertice.G);
                 mdbWriter.Write(mdbVertice.B);
                 mdbWriter.Write(mdbVertice.A);
+            }
+            mdbWriter.Write(mdbMeshModel.MdbTriangles.Count);
+            for (int i = 0; i < mdbMeshModel.MdbTriangles.Count; i++)
+            {
+                var mdbTriangle = mdbMeshModel.MdbTriangles[i];
+                mdbWriter.Write(8);
+                mdbWriter.Write(mdbTriangle.P0);
+                mdbWriter.Write(mdbTriangle.P1);
+                mdbWriter.Write(mdbTriangle.P2);
+                mdbWriter.Write(mdbTriangle.TextureIndex);
+            }
+            mdbWriter.Write(0); // animation stuff ?
+            var blockLength = (int)(mdbWriter.BaseStream.Position - pos);
+            mdbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            mdbWriter.Write(blockLength - 4);
+            mdbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteMeshModelToMdb(MdbMeshModel mdbMeshModel, BinaryWriter mdbWriter, int modelIndex, ref float minX, ref float minY, ref float minZ, ref float maxX, ref float maxY, ref float maxZ)
+        {
+            var pos = mdbWriter.BaseStream.Position;
+            mdbWriter.Write(0);
+            mdbWriter.Write(modelIndex);
+            mdbWriter.Write(mdbMeshModel.MdbVertices.Count);
+            for (int i = 0; i < mdbMeshModel.MdbVertices.Count; i++)
+            {
+                var mdbVertice = mdbMeshModel.MdbVertices[i];
+                mdbWriter.Write(32);
+                mdbWriter.Write(mdbVertice.X);
+                mdbWriter.Write(mdbVertice.Y);
+                mdbWriter.Write(mdbVertice.Z);
+                mdbWriter.Write(mdbVertice.U);
+                mdbWriter.Write(mdbVertice.V);
+                mdbWriter.Write(mdbVertice.NX);
+                mdbWriter.Write(mdbVertice.NY);
+                mdbWriter.Write(mdbVertice.R);
+                mdbWriter.Write(mdbVertice.G);
+                mdbWriter.Write(mdbVertice.B);
+                mdbWriter.Write(mdbVertice.A);
+                if (mdbVertice.X > maxX)
+                    maxX = mdbVertice.X;
+                if (mdbVertice.Y > maxY)
+                    maxY = mdbVertice.Y;
+                if (mdbVertice.Z > maxZ)
+                    maxZ = mdbVertice.Z;
+                if (mdbVertice.X < minX)
+                    minX = mdbVertice.X;
+                if (mdbVertice.Y < minY)
+                    minY = mdbVertice.Y;
+                if (mdbVertice.Z < minZ)
+                    minZ = mdbVertice.Z;
             }
             mdbWriter.Write(mdbMeshModel.MdbTriangles.Count);
             for (int i = 0; i < mdbMeshModel.MdbTriangles.Count; i++)
@@ -887,6 +980,188 @@ namespace TPToolkitLib
             mdbWriter.BaseStream.Seek(0, SeekOrigin.End);
         }
 
+        private static void WriteBoundingValuesToMdb(float minX, float minY, float minZ, float maxX, float maxY, float maxZ, BinaryWriter mdbWriter)
+        {
+            var posx = (minX + maxX) / 2;
+            var posy = (minY + maxY) / 2;
+            var posz = (minZ + maxZ) / 2;
+            var lenx = maxX - minX;
+            var leny = maxY - minY;
+            var lenz = maxZ - minZ;
+            //data block
+            mdbWriter.Write(minX);
+            mdbWriter.Write(-maxZ);
+            mdbWriter.Write(minY);
+            mdbWriter.Write(maxX);
+            mdbWriter.Write(-minZ);
+            mdbWriter.Write(maxY);
+            mdbWriter.Write(posx);
+            mdbWriter.Write(-posz);
+            mdbWriter.Write(posy);
+            var diag = (float)Math.Sqrt(lenx * lenx + leny * leny + lenz * lenz) / 2;
+            mdbWriter.Write(diag);
+        }
+
+        private static void WriteCollisionBoxToMdb(CollisionBox box, BinaryWriter mdbWriter, int collisionTrianglesCount)
+        {
+            var pos = mdbWriter.BaseStream.Position;
+            mdbWriter.Write(0);
+            mdbWriter.Write(2);
+            mdbWriter.Write(72);
+            mdbWriter.Write(3);
+            mdbWriter.Write(box.Position.X);
+            mdbWriter.Write(box.Position.Y);
+            mdbWriter.Write(box.Position.Z);
+            mdbWriter.Write(4);
+            mdbWriter.Write(0);
+            mdbWriter.Write(5);
+            mdbWriter.Write(box.OCross.X);
+            mdbWriter.Write(box.OCross.Y);
+            mdbWriter.Write(box.OCross.Z);
+            mdbWriter.Write(6);
+            mdbWriter.Write(box.OUp.X);
+            mdbWriter.Write(box.OUp.Y);
+            mdbWriter.Write(box.OUp.Z);
+            mdbWriter.Write(7);
+            mdbWriter.Write(box.OForward.X);
+            mdbWriter.Write(box.OForward.Y);
+            mdbWriter.Write(box.OForward.Z);
+            mdbWriter.Write(8);
+            mdbWriter.Write(box.Length.X);
+            mdbWriter.Write(box.Length.Y);
+            mdbWriter.Write(box.Length.Z);
+            mdbWriter.Write(9);
+            mdbWriter.Write(Math.Max(Math.Max(box.Length.X, box.Length.Y), box.Length.Z));
+            mdbWriter.Write(10);
+            mdbWriter.Write(box.Level);
+            mdbWriter.Write(11);
+            if (box.Leftchild != null)
+            {
+                mdbWriter.Write(true);
+                mdbWriter.Write(12);
+                if (box.Rightchild != null)
+                {
+                    mdbWriter.Write(true);
+                    mdbWriter.Write(13);
+                    WriteCollisionBoxToMdb(box.Leftchild, mdbWriter, collisionTrianglesCount);
+                    mdbWriter.Write(16);
+                    WriteCollisionBoxToMdb(box.Rightchild, mdbWriter, collisionTrianglesCount);
+                }
+                else
+                {
+                    mdbWriter.Write(false);
+                    mdbWriter.Write(13);
+                    WriteCollisionBoxToMdb(box.Leftchild, mdbWriter, collisionTrianglesCount);
+                }
+            }
+            else
+            {
+                mdbWriter.Write(false);
+                mdbWriter.Write(12);
+                if (box.Rightchild != null)
+                {
+                    mdbWriter.Write(true);
+                    mdbWriter.Write(16);
+                    WriteCollisionBoxToMdb(box.Rightchild, mdbWriter, collisionTrianglesCount);
+                }
+                else
+                {
+                    mdbWriter.Write(false);
+                }
+            }
+            mdbWriter.Write(14);
+            if (box.Level != 0)
+                mdbWriter.Write(0);
+            else
+            {
+                mdbWriter.Write(collisionTrianglesCount);
+                for (int i = 0; i < collisionTrianglesCount; i++)
+                {
+                    mdbWriter.Write(15);
+                    mdbWriter.Write(i);
+                }
+            }
+            var blockLength = (int)(mdbWriter.BaseStream.Position - pos);
+            mdbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            mdbWriter.Write(blockLength - 4);
+            mdbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteHitboxToMdb(MdbMeshModel mdbMeshModel, BinaryWriter mdbWriter)
+        {
+            mdbWriter.Write(18);
+            mdbWriter.Write(mdbMeshModel.MdbTriangles.Count);
+            for (int i = 0; i < mdbMeshModel.MdbTriangles.Count; i++)
+            {
+                var mdbTriangle = mdbMeshModel.MdbTriangles[i];
+                var p0 = mdbMeshModel.MdbVertices[mdbTriangle.P0];
+                var p1 = mdbMeshModel.MdbVertices[mdbTriangle.P0];
+                var p2 = mdbMeshModel.MdbVertices[mdbTriangle.P0];
+                mdbWriter.Write(19);
+                mdbWriter.Write(48);
+                mdbWriter.Write(20);
+                mdbWriter.Write(p0.X);
+                mdbWriter.Write(p0.Y);
+                mdbWriter.Write(p0.Z);
+                mdbWriter.Write(21);
+                mdbWriter.Write(p1.X);
+                mdbWriter.Write(p1.Y);
+                mdbWriter.Write(p1.Z);
+                mdbWriter.Write(22);
+                mdbWriter.Write(p2.X);
+                mdbWriter.Write(p2.Y);
+                mdbWriter.Write(p2.Z);
+            }
+        }
+
+        private static void WriteFinalStringsToMdb(BinaryWriter mdbWriter)
+        {
+            mdbWriter.Write(21);
+            mdbWriter.Write(8);
+            mdbWriter.Write(Encoding.Default.GetBytes("MeshData"));
+            mdbWriter.Write(4);
+            mdbWriter.Write(Encoding.Default.GetBytes("Root"));
+            mdbWriter.Write(10);
+            mdbWriter.Write(Encoding.Default.GetBytes("LocalBasis"));
+            mdbWriter.Write(8);
+            mdbWriter.Write(Encoding.Default.GetBytes("Position"));
+            mdbWriter.Write(20);
+            mdbWriter.Write(Encoding.Default.GetBytes("LookAt Vector Length"));
+            mdbWriter.Write(19);
+            mdbWriter.Write(Encoding.Default.GetBytes("Orientation - Cross"));
+            mdbWriter.Write(21);
+            mdbWriter.Write(Encoding.Default.GetBytes("Orientation - Forward"));
+            mdbWriter.Write(16);
+            mdbWriter.Write(Encoding.Default.GetBytes("Orientation - Up"));
+            mdbWriter.Write(6);
+            mdbWriter.Write(Encoding.Default.GetBytes("Length"));
+            mdbWriter.Write(6);
+            mdbWriter.Write(Encoding.Default.GetBytes("Radius"));
+            mdbWriter.Write(5);
+            mdbWriter.Write(Encoding.Default.GetBytes("Level"));
+            mdbWriter.Write(12);
+            mdbWriter.Write(Encoding.Default.GetBytes("HasLeftChild"));
+            mdbWriter.Write(13);
+            mdbWriter.Write(Encoding.Default.GetBytes("HasRightChild"));
+            mdbWriter.Write(39);
+            mdbWriter.Write(Encoding.Default.GetBytes("Valid Collision Triangle Indices - Size"));
+            mdbWriter.Write(42);
+            mdbWriter.Write(Encoding.Default.GetBytes("Valid Collision Triangle Indices - Element"));
+            mdbWriter.Write(8);
+            mdbWriter.Write(Encoding.Default.GetBytes("MaxLevel"));
+            mdbWriter.Write(25);
+            mdbWriter.Write(Encoding.Default.GetBytes("CollisionTriangles - Size"));
+            mdbWriter.Write(28);
+            mdbWriter.Write(Encoding.Default.GetBytes("CollisionTriangles - Element"));
+            mdbWriter.Write(2);
+            mdbWriter.Write(Encoding.Default.GetBytes("P0"));
+            mdbWriter.Write(2);
+            mdbWriter.Write(Encoding.Default.GetBytes("P1"));
+            mdbWriter.Write(2);
+            mdbWriter.Write(Encoding.Default.GetBytes("P2"));
+
+        }
+
         private static string RealGroupName(string groupname)
         {
             int index = groupname.LastIndexOf('_');
@@ -913,6 +1188,209 @@ namespace TPToolkitLib
                 return true;
             }
             return false;
+        }
+
+        private static void AutoGenerateCBox(CollisionBox box, MdbMeshModel mdbMeshModel, IList<MdbTriangle> triangles)
+        {
+            var points = GetPointsFromCBoxGroup(triangles);
+            AllPca(box, mdbMeshModel, points, out Vector3 mean);
+            if (box.Level < 5)
+            {
+                box.Leftchild = new CollisionBox() { Level = box.Level + 1 };
+                box.Rightchild = new CollisionBox() { Level = box.Level + 1 };
+                IList<MdbTriangle> leftChild = [];
+                IList<MdbTriangle> rightChild = [];
+                var maxLength = Math.Max(box.Length.X, Math.Max(box.Length.Y, box.Length.Z));
+                if (maxLength == box.Length.X)
+                {
+                    var tempPosX = box.OCross.X * mean.X + box.OCross.Y * mean.Y + box.OCross.Z * mean.Z;
+                    for (int i = 0; i < triangles.Count; i++)
+                    {
+                        var tri = triangles[i];
+                        MdbVertex p0 = mdbMeshModel.MdbVertices[tri.P0], p1 = mdbMeshModel.MdbVertices[tri.P1], p2 = mdbMeshModel.MdbVertices[tri.P2];
+                        var center = new Vector3((Math.Min(Math.Min(p0.X, p1.X), p2.X) + Math.Max(Math.Max(p0.X, p1.X), p2.X)) / 2,
+                                                 (Math.Min(Math.Min(p0.Y, p1.Y), p2.Y) + Math.Max(Math.Max(p0.Y, p1.Y), p2.Y)) / 2,
+                                                 (Math.Min(Math.Min(p0.Z, p1.Z), p2.Z) + Math.Max(Math.Max(p0.Z, p1.Z), p2.Z)) / 2);
+                        var centerTempX = box.OCross.X * center.X + box.OCross.Y * center.Y + box.OCross.Z * center.Z;
+                        if (centerTempX < tempPosX)
+                            leftChild.Add(tri);
+                        else
+                            rightChild.Add(tri);
+                    }
+                    AutoGenerateCBox(box.Leftchild, mdbMeshModel, leftChild);
+                    AutoGenerateCBox(box.Rightchild, mdbMeshModel, rightChild);
+                }
+                else if (maxLength == box.Length.Y)
+                {
+                    var tempPosY = box.OUp.X * mean.X + box.OUp.Y * mean.Y + box.OUp.Z * mean.Z;
+                    for (int i = 0; i < triangles.Count; i++)
+                    {
+                        var tri = triangles[i];
+                        MdbVertex p0 = mdbMeshModel.MdbVertices[tri.P0], p1 = mdbMeshModel.MdbVertices[tri.P1], p2 = mdbMeshModel.MdbVertices[tri.P2];
+                        var center = new Vector3((Math.Min(Math.Min(p0.X, p1.X), p2.X) + Math.Max(Math.Max(p0.X, p1.X), p2.X)) / 2,
+                                                 (Math.Min(Math.Min(p0.Y, p1.Y), p2.Y) + Math.Max(Math.Max(p0.Y, p1.Y), p2.Y)) / 2,
+                                                 (Math.Min(Math.Min(p0.Z, p1.Z), p2.Z) + Math.Max(Math.Max(p0.Z, p1.Z), p2.Z)) / 2);
+                        var centerTempY = box.OUp.X * center.X + box.OUp.Y * center.Y + box.OUp.Z * center.Z;
+                        if (centerTempY < tempPosY)
+                            leftChild.Add(tri);
+                        else
+                            rightChild.Add(tri);
+                    }
+                    AutoGenerateCBox(box.Leftchild, mdbMeshModel, leftChild);
+                    AutoGenerateCBox(box.Rightchild, mdbMeshModel, rightChild);
+                }
+                else
+                {
+                    var tempPosZ = box.OForward.X * mean.X + box.OForward.Y * mean.Y + box.OForward.Z * mean.Z;
+                    for (int i = 0; i < triangles.Count; i++)
+                    {
+                        var tri = triangles[i];
+                        MdbVertex p0 = mdbMeshModel.MdbVertices[tri.P0], p1 = mdbMeshModel.MdbVertices[tri.P1], p2 = mdbMeshModel.MdbVertices[tri.P2];
+                        var center = new Vector3((Math.Min(Math.Min(p0.X, p1.X), p2.X) + Math.Max(Math.Max(p0.X, p1.X), p2.X)) / 2,
+                                                 (Math.Min(Math.Min(p0.Y, p1.Y), p2.Y) + Math.Max(Math.Max(p0.Y, p1.Y), p2.Y)) / 2,
+                                                 (Math.Min(Math.Min(p0.Z, p1.Z), p2.Z) + Math.Max(Math.Max(p0.Z, p1.Z), p2.Z)) / 2);
+                        var centerTempZ = box.OForward.X * center.X + box.OForward.Y * center.Y + box.OForward.Z * center.Z;
+                        if (centerTempZ < tempPosZ)
+                            leftChild.Add(tri);
+                        else
+                            rightChild.Add(tri);
+                    }
+                    AutoGenerateCBox(box.Leftchild, mdbMeshModel, leftChild);
+                    AutoGenerateCBox(box.Rightchild, mdbMeshModel, rightChild);
+                }
+            }
+        }
+
+        private static IList<int> GetPointsFromCBoxGroup(IList<MdbTriangle> mdbTriangles)
+        {
+            IList<int> points = [];
+            for (int i = 0; i < mdbTriangles.Count; i++)
+            {
+                var tri = mdbTriangles[i];
+                bool hasFoundP0, hasFoundP1, hasFoundP2;
+                hasFoundP0 = hasFoundP1 = hasFoundP2 = false;
+                for (int k = 0; k < points.Count; k++)
+                {
+                    var p = points[k];
+                    if (p == tri.P0)
+                    {
+                        hasFoundP0 = true;
+                        if (hasFoundP0 && hasFoundP1 && hasFoundP2)
+                            break;
+                    }
+                    if (p == tri.P1)
+                    {
+                        hasFoundP1 = true;
+                        if (hasFoundP0 && hasFoundP1 && hasFoundP2)
+                            break;
+                    }
+                    if (p == tri.P2)
+                    {
+                        hasFoundP2 = true;
+                        if (hasFoundP0 && hasFoundP1 && hasFoundP2)
+                            break;
+                    }
+                }
+                if (!hasFoundP0)
+                    points.Add(tri.P0);
+                if (!hasFoundP1)
+                    points.Add(tri.P1);
+                if (!hasFoundP2)
+                    points.Add(tri.P2);
+            }
+            return points;
+        }
+        
+        private static void AllPca(CollisionBox box, MdbMeshModel mdbMeshModel, IList<int> points, out Vector3 mean)
+        {
+            for (int i = 0; i < points.Count; i++)
+            {
+                try
+                {
+                    var p = mdbMeshModel.MdbVertices[points[i]];
+                    box.Position.X += p.X;
+                    box.Position.Y += p.Y;
+                    box.Position.Z += p.Z;
+                }
+                catch { }
+            }
+            if (points.Count != 0)
+            {
+                box.Position /= points.Count;
+            }
+            mean = box.Position;
+            Vector3 covMatRow1 = Vector3.Zero, covMatRow2 = covMatRow1, covMatRow3 = covMatRow1;
+            for (int i = 0; i < points.Count; i++)
+            {
+                var point = points[i];
+                try
+                {
+                    var p = mdbMeshModel.MdbVertices[point];
+                    covMatRow1.X += (p.X - box.Position.X) * (p.X - box.Position.X);
+                    covMatRow1.Y += (p.X - box.Position.X) * (p.Y - box.Position.Y);
+                    covMatRow1.Z += (p.X - box.Position.X) * (p.Z - box.Position.Z);
+                    covMatRow2.Y += (p.Y - box.Position.Y) * (p.Y - box.Position.Y);
+                    covMatRow2.Z += (p.Y - box.Position.Y) * (p.Z - box.Position.Z);
+                    covMatRow3.Z += (p.Z - box.Position.Z) * (p.Z - box.Position.Z);
+                }
+                catch { }
+            }
+            if (points.Count != 0)
+            {
+                covMatRow1 /= points.Count;
+                covMatRow2 /= points.Count;
+                covMatRow3 /= points.Count;
+            }
+            //Symetry in the covariance matrix
+            covMatRow2.X = covMatRow1.Y;
+            covMatRow3.X = covMatRow1.Z;
+            covMatRow3.Y = covMatRow2.Z;
+            var eigenValues = MatrixEigenStuff.EigenValues(covMatRow1, covMatRow2, covMatRow3);
+            box.OCross = Vector3.Normalize(MatrixEigenStuff.EigenVector(covMatRow1, covMatRow2, eigenValues.X));
+            box.OUp = Vector3.Normalize(MatrixEigenStuff.EigenVector(covMatRow1, covMatRow2, eigenValues.Z));
+            box.OForward = Vector3.Cross(box.OCross, box.OUp);
+            Vector3 tempx = new Vector3(box.OCross.X, box.OUp.X, box.OForward.X),
+                    tempy = new Vector3(box.OCross.Y, box.OUp.Y, box.OForward.Y),
+                    tempz = new Vector3(box.OCross.Z, box.OUp.Z, box.OForward.Z);
+            float minx, miny, minz, maxx, maxy, maxz;
+            minx = miny = minz = float.MaxValue;
+            maxx = maxy = maxz = float.MinValue;
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                var point = points[i];
+                try
+                {
+                    var p = mdbMeshModel.MdbVertices[point];
+                    float vTempx = tempx.X * p.X + tempy.X * p.Y + tempz.X * p.Z,
+                          vTempy = tempx.Y * p.X + tempy.Y * p.Y + tempz.Y * p.Z,
+                          vTempz = tempx.Z * p.X + tempy.Z * p.Y + tempz.Z * p.Z;
+                    if (vTempx < minx)
+                        minx = vTempx;
+                    if (vTempy < miny)
+                        miny = vTempy;
+                    if (vTempz < minz)
+                        minz = vTempz;
+                    if (vTempx > maxx)
+                        maxx = vTempx;
+                    if (vTempy > maxy)
+                        maxy = vTempy;
+                    if (vTempz > maxz)
+                        maxz = vTempz;
+                }
+                catch { }
+            }
+
+            box.Position.X = (minx + maxx) / 2;
+            box.Position.Y = (miny + maxy) / 2;
+            box.Position.Z = (minz + maxz) / 2;
+            box.Length.X = (maxx - minx) / 2;
+            box.Length.Y = (maxy - miny) / 2;
+            box.Length.Z = (maxz - minz) / 2;
+            var tempPos = box.Position;
+            box.Position.X = box.OCross.X * tempPos.X + box.OUp.X * tempPos.Y + box.OForward.X * tempPos.Z;
+            box.Position.Y = box.OCross.Y * tempPos.X + box.OUp.Y * tempPos.Y + box.OForward.Y * tempPos.Z;
+            box.Position.Z = box.OCross.Z * tempPos.X + box.OUp.Z * tempPos.Y + box.OForward.Z * tempPos.Z;
         }
     }
 }
