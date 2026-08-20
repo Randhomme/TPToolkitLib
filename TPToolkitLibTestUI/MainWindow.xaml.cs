@@ -107,7 +107,7 @@ namespace TPToolkitLibUITest
             {
                 Multiselect = true,
                 DefaultExt = ".obj",
-                Filter = "Object file |*.obj",
+                Filter = "GL Transmission Format Binary |*.glb|Object file |*.obj",
                 Title = "Select objs",
             };
             var sfbd = new WF.FolderBrowserDialog()
@@ -117,7 +117,14 @@ namespace TPToolkitLibUITest
             };
             if (ofd.ShowDialog() == true && sfbd.ShowDialog() == WF.DialogResult.OK)
             {
-                MdbTool.XObjToXMdb(ofd.FileNames, sfbd.SelectedPath);
+                if (ofd.FilterIndex == 0) // glb
+                {
+                    MdbTool.XGlbToXMdb(ofd.FileNames, sfbd.SelectedPath);
+                }
+                else if (ofd.FilterIndex == 1) // obj
+                {
+                    MdbTool.XObjToXMdb(ofd.FileNames, sfbd.SelectedPath);
+                }
             }
         }
     }
