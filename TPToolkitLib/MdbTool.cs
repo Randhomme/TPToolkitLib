@@ -2,6 +2,7 @@
 using SharpGLTF.Geometry.VertexTypes;
 using SharpGLTF.Materials;
 using SharpGLTF.Scenes;
+using SharpGLTF.Schema2;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -66,6 +67,20 @@ namespace TPToolkitLib
             }
         }
 
+        public static void XGlbToXMdb(string[] glbFilePaths, string mdbFolderPath)
+        {
+            for (int i = 0; i < glbFilePaths.Length; i++)
+            {
+                var glbFilePath = glbFilePaths[i];
+                var meshes = MeshesFromGlb(glbFilePath);
+                foreach (var mdbMesh in meshes)
+                {
+                    var mdbFilePath = Path.Combine(mdbFolderPath, Path.ChangeExtension(mdbMesh.GroupName, "mdb"));
+                    MeshToMdb(mdbMesh, mdbFilePath);
+                }
+            }
+        }
+
         public static IEnumerable<MdbMesh> MeshesFromMdbs(string[] mdbFilePaths, bool lods)
         {
             IList<MdbMesh> mdbMeshes = [];
@@ -87,6 +102,12 @@ namespace TPToolkitLib
         {
             var objScene = ReadObj(objFilePath);
             return ObjSceneToMdbMeshes(objScene);
+        }
+
+        public static IEnumerable<MdbMesh> MeshesFromGlb(string glbFilePath)
+        {
+            var glbScene = SceneBuilder.LoadDefaultScene(glbFilePath);
+            return GlbSceneToMdbMeshes(glbScene);
         }
 
         public static void MeshesToObj(IEnumerable<MdbMesh> mdbMeshes, string objFilePath, string textureDirectory)
@@ -267,7 +288,7 @@ namespace TPToolkitLib
                 {
                     throw new Exception("Skipped\nUnable to read texture count in the file.\n");
                 }
-                var separator = new char[] { ' ', ';', ',', '+', '\r', '\t', '\n' };
+                
                 for (uint i = 0; i < matCount; i++)
                 {
                     try
@@ -280,11 +301,7 @@ namespace TPToolkitLib
                         if (strlength < 0)
                             strlength = -strlength - 1; //let's just use the opposite for simplicity
                         //creating material
-                        var mat = new MdbMaterial();
-                        mat.TextureName = new string(mdbReader.ReadChars(strlength));
-                        //generate material name from texture name
-                        mat.MaterialName = Path.GetFileNameWithoutExtension
-                            (string.Join("_", mat.TextureName.Split(separator)));
+                        var mat = new MdbMaterial(new string(mdbReader.ReadChars(strlength)));
                         //add to current mat
                         mdbMesh.Materials.Add(mat);
                         //skip 72 bytes (material data)
@@ -471,9 +488,10 @@ namespace TPToolkitLib
                     }
                     else if (line.StartsWith("map_kd ", StringComparison.OrdinalIgnoreCase))
                     {
-                        var textureName = Path.GetFileNameWithoutExtension(line.Substring(7));
-                        if (mat != null && !textureName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
-                            mat.TextureName = Path.ChangeExtension(textureName, "tga");
+                        if (mat != null)
+                        {
+                            mat.TextureName = Path.GetFileName(line.Substring(7));
+                        }
                     }
                 }
                 //add the last mat
@@ -500,14 +518,15 @@ namespace TPToolkitLib
                     IList<int[]> currentObjPoints = []; // used for correct point indexing
                     foreach (var objMaterialGroup in objGroup.MaterialGroups)
                     {
-                        // get material index
                         ushort materialIndex;
                         bool hasFoundMaterial = false;
                         var currentMdbMaterial = objScene.Materials.First((m) => m.MaterialName.Equals(objMaterialGroup.MaterialName, StringComparison.OrdinalIgnoreCase));
+                        var currentTextureNameNoExt = Path.GetFileNameWithoutExtension(currentMdbMaterial.TextureName);
                         for (materialIndex = 0; materialIndex < mdbMesh.Materials.Count; materialIndex++)
                         {
                             var mdbMaterial = mdbMesh.Materials[materialIndex];
-                            if(mdbMaterial.MaterialName.Equals(currentMdbMaterial.MaterialName, StringComparison.OrdinalIgnoreCase))
+                            var textureName = Path.GetFileNameWithoutExtension(mdbMaterial.TextureName);
+                            if (textureName.Equals(currentTextureNameNoExt, StringComparison.OrdinalIgnoreCase))
                             {
                                 hasFoundMaterial = true;
                                 break;
@@ -515,7 +534,10 @@ namespace TPToolkitLib
                         }
                         if (!hasFoundMaterial)
                         {
-                            mdbMesh.Materials.Add(currentMdbMaterial);
+                            var newMdbMaterial = new MdbMaterial(currentTextureNameNoExt);
+                            if (!currentTextureNameNoExt.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                                newMdbMaterial.TextureName = Path.ChangeExtension(currentTextureNameNoExt, "tga");
+                            mdbMesh.Materials.Add(newMdbMaterial);
                         }
                         foreach (var triangle in objMaterialGroup.Triangles)
                         {
@@ -573,23 +595,135 @@ namespace TPToolkitLib
                             mdbMeshModel.MdbTriangles.Add(new((ushort)p2Index, (ushort)p1Index, (ushort)p0Index, materialIndex));
                         }
                     }
-                    for(int i = 0; i < currentObjPoints.Count; i++)
+                    for (int i = 0; i < currentObjPoints.Count; i++)
                     {
                         var p = currentObjPoints[i];
                         var v = objScene.V[p[0] - 1];
                         var vt = objScene.Vt[p[1] - 1];
                         var vn = objScene.Vn[p[2] - 1];
-                        if (vn.Z < -1)
-                            vn.Z = -1;
-                        else if (vn.Z > 1)
-                            vn.Z = 1;
+                        if (vn.Y < -1) vn.Y = -1;
+                        else if (vn.Y > 1) vn.Y = 1;
+                        if (vn.Z < -1) vn.Z = -1;
+                        else if (vn.Z > 1) vn.Z = 1;
                         var nx = vn.X <= 0 ? Math.Acos(-vn.Z) : -Math.Acos(-vn.Z);
                         var ny = Math.Asin(vn.Y);
                         mdbMeshModel.MdbVertices.Add(new(v.X, -v.Z, v.Y, vt.X, -vt.Y, (float)nx, (float)ny, 255, 255, 255, 255));
                     }
-                    mdbMesh.MeshModels.Add(mdbMeshModel);
+                    if (mdbMeshModel.MdbTriangles.Count > 0)
+                    {
+                        mdbMesh.MeshModels.Add(mdbMeshModel);
+                    }
                 }
-                mdbMeshes.Add(mdbMesh);
+                if (mdbMesh.MeshModels.Count > 0)
+                {
+                    mdbMeshes.Add(mdbMesh);
+                }
+            }
+            return mdbMeshes;
+        }
+
+        private static IEnumerable<MdbMesh> GlbSceneToMdbMeshes(SceneBuilder glbScene)
+        {
+            IList<MdbMesh> mdbMeshes = [];
+            var sortedGroups = glbScene.Instances.OrderBy((i) => i.Name, new CustomComparer<string>(NaturalStringComparer.CompareNatural)).GroupBy((i) => RealGroupName(i.Name));
+            foreach (var group in sortedGroups)
+            {
+                var mdbMesh = new MdbMesh(group.Key);
+                foreach (var glbGroup in group)
+                {
+                    var mdbMeshModel = new MdbMeshModel();
+                    var glbMesh = glbGroup.Content.GetGeometryAsset();
+                    if (glbMesh != null)
+                    {
+                        int vCount = 0;
+                        foreach (var primitive in glbMesh.Primitives)
+                        {
+                            string currentTextureNameNoExt = "NULL";
+                            if (primitive.Material.Extras is JsonObject obj)
+                            {
+                                if (obj.TryGetPropertyValue("TextureName", out var value))
+                                {
+                                    if (value != null)
+                                    {
+                                        currentTextureNameNoExt = Path.GetFileNameWithoutExtension(value.GetValue<string>());
+                                    }
+                                }
+                                else
+                                {
+                                    var channel = primitive.Material.GetChannel(KnownChannel.BaseColor);
+                                    if (channel != null)
+                                    {
+                                        currentTextureNameNoExt = Path.GetFileNameWithoutExtension(channel.Texture.PrimaryImage.Name);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                var channel = primitive.Material.GetChannel(KnownChannel.BaseColor);
+                                if (channel != null)
+                                {
+                                    currentTextureNameNoExt = Path.GetFileNameWithoutExtension(channel.Texture.PrimaryImage.Name);
+                                }
+                            }
+                            ushort materialIndex;
+                            bool hasFoundMaterial = false;
+                            for (materialIndex = 0; materialIndex < mdbMesh.Materials.Count; materialIndex++)
+                            {
+                                var mdbMaterial = mdbMesh.Materials[materialIndex];
+                                var textureNameNoExt = Path.GetFileNameWithoutExtension(mdbMaterial.TextureName);
+                                if (textureNameNoExt.Equals(currentTextureNameNoExt, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    hasFoundMaterial = true;
+                                    break;
+                                }
+                            }
+                            if (!hasFoundMaterial)
+                            {
+                                var newMdbMaterial = new MdbMaterial(currentTextureNameNoExt);
+                                if (!currentTextureNameNoExt.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+                                    newMdbMaterial.TextureName = Path.ChangeExtension(currentTextureNameNoExt, "tga");
+                                mdbMesh.Materials.Add(newMdbMaterial);
+                            }
+                            for (int i = 0; i < primitive.Vertices.Count; i++)
+                            {
+                                var v = primitive.Vertices[i];
+                                var vGeom = v.GetGeometry();
+                                var vMat = v.GetMaterial();
+                                var vPos = vGeom.GetPosition();
+                                var vTexPos = vMat.GetTexCoord(0);
+                                var vColor = vMat.GetColor(0);
+                                float nx = 0, ny = 0;
+                                if (vGeom.TryGetNormal(out var vNorm))
+                                {
+                                    if (vNorm.Y < -1) vNorm.Y = -1;
+                                    else if (vNorm.Y > 1) vNorm.Y = 1;
+                                    if (vNorm.Z < -1) vNorm.Z = -1;
+                                    else if (vNorm.Z > 1) vNorm.Z = 1;
+                                    if (vNorm.X <= 0)
+                                        nx = (float)Math.Acos(-vNorm.Z);
+                                    else
+                                        nx = (float)-Math.Acos(-vNorm.Z);
+                                    ny = (float)Math.Asin(vNorm.Y);
+                                }
+                                mdbMeshModel.MdbVertices.Add(new(vPos.X, -vPos.Z, vPos.Y, vTexPos.X, vTexPos.Y, nx, ny, (byte)(vColor.X * 255), (byte)(vColor.Y * 255), (byte)(vColor.Z * 255), (byte)(vColor.W * 255)));
+                            }
+                            for (int i = 0; i < primitive.Triangles.Count; i++)
+                            {
+                                var t = primitive.Triangles[i];
+                                mdbMeshModel.MdbTriangles.Add(new((ushort)(t.C + vCount), (ushort)(t.B + vCount), (ushort)(t.A + vCount), materialIndex));
+                            }
+                            vCount += primitive.Vertices.Count;
+                        }
+                        if (mdbMeshModel.MdbTriangles.Count > 0)
+                        {
+                            mdbMesh.MeshModels.Add(mdbMeshModel);
+                        }
+                    }
+                }
+                if (mdbMesh.MeshModels.Count > 0)
+                {
+                    mdbMeshes.Add(mdbMesh);
+                }
             }
             return mdbMeshes;
         }
@@ -619,8 +753,7 @@ namespace TPToolkitLib
                 var finalMdbMaterial = finalMdbMaterials[i];
                 var glbMaterial = new MaterialBuilder(finalMdbMaterial.MaterialName)
                     .WithMetallicRoughness(0, 1f)
-                    .WithDoubleSide(true)
-                    .WithSpecularColor(null, new(0, 0, 0));
+                    .WithDoubleSide(true);
 
                 glbMaterial.Extras = new JsonObject
                 {
@@ -631,6 +764,7 @@ namespace TPToolkitLib
                 {
                     var pngBytes = DDSUtils.ConvertDdsToPngBytes(Path.Combine(textureDirectory, Path.ChangeExtension(finalMdbMaterial.TextureName, "dds")));
                     var imageBuilder = ImageBuilder.From(pngBytes, Path.GetFileNameWithoutExtension(finalMdbMaterial.TextureName));
+                    byte[] a = new byte[64];
                     glbMaterial.WithChannelImage(KnownChannel.BaseColor, imageBuilder);
                 }
                 catch (FileNotFoundException) { } // No texture for the material, we keep going
