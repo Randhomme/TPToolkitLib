@@ -1,8 +1,8 @@
 ﻿using System.Numerics;
 
-namespace TPToolkitLib.Mesh
+namespace TPToolkitLib.Mesh.Classes
 {
-    public class CollisionBox
+    public class MdbCollisionBox
     {
         public string BoxName;
         public uint Level = 0;
@@ -11,7 +11,7 @@ namespace TPToolkitLib.Mesh
         public Vector3 OForward;
         public Vector3 OUp;
         public Vector3 Length;
-        public CollisionBox Leftchild { get; set; }
-        public CollisionBox Rightchild { get; set; }
+        public MdbCollisionBox Leftchild { get; set; }
+        public MdbCollisionBox Rightchild { get; set; }
     }
 }
