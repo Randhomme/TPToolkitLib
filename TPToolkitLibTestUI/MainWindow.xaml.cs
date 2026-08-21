@@ -117,11 +117,11 @@ namespace TPToolkitLibUITest
             };
             if (ofd.ShowDialog() == true && sfbd.ShowDialog() == WF.DialogResult.OK)
             {
-                if (ofd.FilterIndex == 0) // glb
+                if (ofd.FilterIndex == 1) // glb
                 {
                     MdbTool.XGlbToXMdb(ofd.FileNames, sfbd.SelectedPath);
                 }
-                else if (ofd.FilterIndex == 1) // obj
+                else if (ofd.FilterIndex == 2) // obj
                 {
                     MdbTool.XObjToXMdb(ofd.FileNames, sfbd.SelectedPath);
                 }
