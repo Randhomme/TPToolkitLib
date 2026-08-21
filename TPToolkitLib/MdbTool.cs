@@ -1228,8 +1228,8 @@ namespace TPToolkitLib
             {
                 var mdbTriangle = mdbMeshModel.MdbTriangles[i];
                 var p0 = mdbMeshModel.MdbVertices[mdbTriangle.P0];
-                var p1 = mdbMeshModel.MdbVertices[mdbTriangle.P0];
-                var p2 = mdbMeshModel.MdbVertices[mdbTriangle.P0];
+                var p1 = mdbMeshModel.MdbVertices[mdbTriangle.P1];
+                var p2 = mdbMeshModel.MdbVertices[mdbTriangle.P2];
                 mdbWriter.Write(19);
                 mdbWriter.Write(48);
                 mdbWriter.Write(20);
