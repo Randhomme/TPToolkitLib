@@ -848,9 +848,10 @@ namespace TPToolkitLib
                 for (int j = 0; j < meshModel.MdbVertices.Count; j++)
                 {
                     var mdbVertice = meshModel.MdbVertices[j];
+                    var n = ToDirection(mdbVertice.NX, mdbVertice.NY);
                     objWriter.WriteLine($"v {mdbVertice.X} {mdbVertice.Z} {-mdbVertice.Y}");
                     objWriter.WriteLine($"vt {mdbVertice.U} {-mdbVertice.V}");
-                    objWriter.WriteLine($"vn {-Math.Sin(mdbVertice.NX)} {Math.Sin(mdbVertice.NY)} {-Math.Cos(mdbVertice.NX)}");
+                    objWriter.WriteLine($"vn {n.X} {n.Y} {n.Z}");
                 }
                 var triGroups = meshModel.MdbTriangles.GroupBy((t) => t.TextureIndex);
                 foreach (var triGroup in triGroups)
@@ -908,9 +909,9 @@ namespace TPToolkitLib
                     var pos0 = new Vector3(v0.X, v0.Z, -v0.Y);
                     var pos1 = new Vector3(v1.X, v1.Z, -v1.Y);
                     var pos2 = new Vector3(v2.X, v2.Z, -v2.Y);
-                    var n0 = Vector3.Normalize(new Vector3((float)-Math.Sin(v0.NX), (float)Math.Sin(v0.NY), (float)-Math.Cos(v0.NX)));
-                    var n1 = Vector3.Normalize(new Vector3((float)-Math.Sin(v1.NX), (float)Math.Sin(v1.NY), (float)-Math.Cos(v1.NX)));
-                    var n2 = Vector3.Normalize(new Vector3((float)-Math.Sin(v2.NX), (float)Math.Sin(v2.NY), (float)-Math.Cos(v2.NX)));
+                    var n0 = ToDirection(v0.NX, v0.NY);
+                    var n1 = ToDirection(v1.NX, v1.NY);
+                    var n2 = ToDirection(v2.NX, v2.NY);
                     var glbPrim = glbMesh.UsePrimitive(glbMaterials[mdbTriangle.TextureIndex]);
                     var p0 = new VertexBuilder<VertexPositionNormal, VertexColor1Texture1, VertexEmpty>
                         (new(pos0, n0), new VertexColor1Texture1(new(v0.R / 255f, v0.G / 255f, v0.B / 255f, v0.A / 255f), new(v0.U, v0.V)));
@@ -1287,7 +1288,11 @@ namespace TPToolkitLib
             mdbWriter.Write(Encoding.Default.GetBytes("P1"));
             mdbWriter.Write(2);
             mdbWriter.Write(Encoding.Default.GetBytes("P2"));
+        }
 
+        private static Vector3 ToDirection(float yaw, float pitch)
+        {
+            return new Vector3((float)(-Math.Sin(yaw) * Math.Cos(pitch)), (float)Math.Sin(pitch), (float)(-Math.Cos(yaw) * Math.Cos(pitch)));
         }
 
         private static string RealGroupName(string groupname)
