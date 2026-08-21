@@ -2,7 +2,6 @@
 using SharpGLTF.Geometry.VertexTypes;
 using SharpGLTF.Materials;
 using SharpGLTF.Scenes;
-using SharpGLTF.Schema2;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -692,20 +691,17 @@ namespace TPToolkitLib
                                 var vPos = vGeom.GetPosition();
                                 var vTexPos = vMat.GetTexCoord(0);
                                 var vColor = vMat.GetColor(0);
-                                float nx = 0, ny = 0;
-                                if (vGeom.TryGetNormal(out var vNorm))
+                                double nx = 0, ny = 0;
+                                if (vGeom.TryGetNormal(out var vn))
                                 {
-                                    if (vNorm.Y < -1) vNorm.Y = -1;
-                                    else if (vNorm.Y > 1) vNorm.Y = 1;
-                                    if (vNorm.Z < -1) vNorm.Z = -1;
-                                    else if (vNorm.Z > 1) vNorm.Z = 1;
-                                    if (vNorm.X <= 0)
-                                        nx = (float)Math.Acos(-vNorm.Z);
-                                    else
-                                        nx = (float)-Math.Acos(-vNorm.Z);
-                                    ny = (float)Math.Asin(vNorm.Y);
+                                    if (vn.Y < -1) vn.Y = -1;
+                                    else if (vn.Y > 1) vn.Y = 1;
+                                    if (vn.Z < -1) vn.Z = -1;
+                                    else if (vn.Z > 1) vn.Z = 1;
+                                    nx = vn.X <= 0 ? Math.Acos(-vn.Z) : -Math.Acos(-vn.Z);
+                                    ny = Math.Asin(vn.Y);
                                 }
-                                mdbMeshModel.MdbVertices.Add(new(vPos.X, -vPos.Z, vPos.Y, vTexPos.X, vTexPos.Y, nx, ny, (byte)(vColor.X * 255), (byte)(vColor.Y * 255), (byte)(vColor.Z * 255), (byte)(vColor.W * 255)));
+                                mdbMeshModel.MdbVertices.Add(new(vPos.X, -vPos.Z, vPos.Y, vTexPos.X, vTexPos.Y, (float)nx, (float)ny, (byte)(vColor.X * 255), (byte)(vColor.Y * 255), (byte)(vColor.Z * 255), (byte)(vColor.W * 255)));
                             }
                             for (int i = 0; i < primitive.Triangles.Count; i++)
                             {
@@ -1123,19 +1119,19 @@ namespace TPToolkitLib
             var lenz = maxZ - minZ;
             //data block
             mdbWriter.Write(minX);
-            mdbWriter.Write(-maxZ);
             mdbWriter.Write(minY);
+            mdbWriter.Write(minZ);
             mdbWriter.Write(maxX);
-            mdbWriter.Write(-minZ);
             mdbWriter.Write(maxY);
+            mdbWriter.Write(maxZ);
             mdbWriter.Write(posx);
-            mdbWriter.Write(-posz);
             mdbWriter.Write(posy);
+            mdbWriter.Write(posz);
             var diag = (float)Math.Sqrt(lenx * lenx + leny * leny + lenz * lenz) / 2;
             mdbWriter.Write(diag);
         }
 
-        private static void WriteCollisionBoxToMdb(CollisionBox box, BinaryWriter mdbWriter, int collisionTrianglesCount)
+        private static void WriteCollisionBoxToMdb(MdbCollisionBox box, BinaryWriter mdbWriter, int collisionTrianglesCount)
         {
             var pos = mdbWriter.BaseStream.Position;
             mdbWriter.Write(0);
@@ -1323,14 +1319,14 @@ namespace TPToolkitLib
             return false;
         }
 
-        private static void AutoGenerateCBox(CollisionBox box, MdbMeshModel mdbMeshModel, IList<MdbTriangle> triangles)
+        private static void AutoGenerateCBox(MdbCollisionBox box, MdbMeshModel mdbMeshModel, IList<MdbTriangle> triangles)
         {
             var points = GetPointsFromCBoxGroup(triangles);
             AllPca(box, mdbMeshModel, points, out Vector3 mean);
             if (box.Level < 5)
             {
-                box.Leftchild = new CollisionBox() { Level = box.Level + 1 };
-                box.Rightchild = new CollisionBox() { Level = box.Level + 1 };
+                box.Leftchild = new MdbCollisionBox() { Level = box.Level + 1 };
+                box.Rightchild = new MdbCollisionBox() { Level = box.Level + 1 };
                 IList<MdbTriangle> leftChild = [];
                 IList<MdbTriangle> rightChild = [];
                 var maxLength = Math.Max(box.Length.X, Math.Max(box.Length.Y, box.Length.Z));
@@ -1350,8 +1346,10 @@ namespace TPToolkitLib
                         else
                             rightChild.Add(tri);
                     }
-                    AutoGenerateCBox(box.Leftchild, mdbMeshModel, leftChild);
-                    AutoGenerateCBox(box.Rightchild, mdbMeshModel, rightChild);
+                    if(leftChild.Count > 0)
+                        AutoGenerateCBox(box.Leftchild, mdbMeshModel, leftChild);
+                    if(rightChild.Count > 0)
+                        AutoGenerateCBox(box.Rightchild, mdbMeshModel, rightChild);
                 }
                 else if (maxLength == box.Length.Y)
                 {
@@ -1369,8 +1367,10 @@ namespace TPToolkitLib
                         else
                             rightChild.Add(tri);
                     }
-                    AutoGenerateCBox(box.Leftchild, mdbMeshModel, leftChild);
-                    AutoGenerateCBox(box.Rightchild, mdbMeshModel, rightChild);
+                    if (leftChild.Count > 0)
+                        AutoGenerateCBox(box.Leftchild, mdbMeshModel, leftChild);
+                    if (rightChild.Count > 0)
+                        AutoGenerateCBox(box.Rightchild, mdbMeshModel, rightChild);
                 }
                 else
                 {
@@ -1388,8 +1388,10 @@ namespace TPToolkitLib
                         else
                             rightChild.Add(tri);
                     }
-                    AutoGenerateCBox(box.Leftchild, mdbMeshModel, leftChild);
-                    AutoGenerateCBox(box.Rightchild, mdbMeshModel, rightChild);
+                    if (leftChild.Count > 0)
+                        AutoGenerateCBox(box.Leftchild, mdbMeshModel, leftChild);
+                    if (rightChild.Count > 0)
+                        AutoGenerateCBox(box.Rightchild, mdbMeshModel, rightChild);
                 }
             }
         }
@@ -1434,7 +1436,7 @@ namespace TPToolkitLib
             return points;
         }
         
-        private static void AllPca(CollisionBox box, MdbMeshModel mdbMeshModel, IList<int> points, out Vector3 mean)
+        private static void AllPca(MdbCollisionBox box, MdbMeshModel mdbMeshModel, IList<int> points, out Vector3 center)
         {
             for (int i = 0; i < points.Count; i++)
             {
@@ -1447,11 +1449,11 @@ namespace TPToolkitLib
                 }
                 catch { }
             }
-            if (points.Count != 0)
+            if (points.Count > 0)
             {
                 box.Position /= points.Count;
             }
-            mean = box.Position;
+            center = box.Position;
             Vector3 covMatRow1 = Vector3.Zero, covMatRow2 = covMatRow1, covMatRow3 = covMatRow1;
             for (int i = 0; i < points.Count; i++)
             {
@@ -1459,16 +1461,19 @@ namespace TPToolkitLib
                 try
                 {
                     var p = mdbMeshModel.MdbVertices[point];
-                    covMatRow1.X += (p.X - box.Position.X) * (p.X - box.Position.X);
-                    covMatRow1.Y += (p.X - box.Position.X) * (p.Y - box.Position.Y);
-                    covMatRow1.Z += (p.X - box.Position.X) * (p.Z - box.Position.Z);
-                    covMatRow2.Y += (p.Y - box.Position.Y) * (p.Y - box.Position.Y);
-                    covMatRow2.Z += (p.Y - box.Position.Y) * (p.Z - box.Position.Z);
-                    covMatRow3.Z += (p.Z - box.Position.Z) * (p.Z - box.Position.Z);
+                    var px = p.X - box.Position.X;
+                    var py = p.Y - box.Position.Y;
+                    var pz = p.Z - box.Position.Z;
+                    covMatRow1.X += px * px;
+                    covMatRow1.Y += px * py;
+                    covMatRow1.Z += px * pz;
+                    covMatRow2.Y += py * py;
+                    covMatRow2.Z += py * pz;
+                    covMatRow3.Z += pz * pz;
                 }
                 catch { }
             }
-            if (points.Count != 0)
+            if (points.Count > 0)
             {
                 covMatRow1 /= points.Count;
                 covMatRow2 /= points.Count;
@@ -1479,12 +1484,9 @@ namespace TPToolkitLib
             covMatRow3.X = covMatRow1.Z;
             covMatRow3.Y = covMatRow2.Z;
             var eigenValues = MatrixEigenStuff.EigenValues(covMatRow1, covMatRow2, covMatRow3);
-            box.OCross = Vector3.Normalize(MatrixEigenStuff.EigenVector(covMatRow1, covMatRow2, eigenValues.X));
-            box.OUp = Vector3.Normalize(MatrixEigenStuff.EigenVector(covMatRow1, covMatRow2, eigenValues.Z));
-            box.OForward = Vector3.Cross(box.OCross, box.OUp);
-            Vector3 tempx = new Vector3(box.OCross.X, box.OUp.X, box.OForward.X),
-                    tempy = new Vector3(box.OCross.Y, box.OUp.Y, box.OForward.Y),
-                    tempz = new Vector3(box.OCross.Z, box.OUp.Z, box.OForward.Z);
+            var axis0 = Vector3.Normalize(MatrixEigenStuff.EigenVector(covMatRow1, covMatRow2, eigenValues.X));
+            var axis1 = Vector3.Normalize(MatrixEigenStuff.EigenVector(covMatRow1, covMatRow2, eigenValues.Y));
+            var axis2 = Vector3.Cross(axis0, axis1);
             float minx, miny, minz, maxx, maxy, maxz;
             minx = miny = minz = float.MaxValue;
             maxx = maxy = maxz = float.MinValue;
@@ -1495,9 +1497,10 @@ namespace TPToolkitLib
                 try
                 {
                     var p = mdbMeshModel.MdbVertices[point];
-                    float vTempx = tempx.X * p.X + tempy.X * p.Y + tempz.X * p.Z,
-                          vTempy = tempx.Y * p.X + tempy.Y * p.Y + tempz.Y * p.Z,
-                          vTempz = tempx.Z * p.X + tempy.Z * p.Y + tempz.Z * p.Z;
+                    var vect = new Vector3(p.X, p.Y, p.Z) - center;
+                    float vTempx = Vector3.Dot(vect, axis0),
+                          vTempy = Vector3.Dot(vect, axis1),
+                          vTempz = Vector3.Dot(vect, axis2);
                     if (vTempx < minx)
                         minx = vTempx;
                     if (vTempy < miny)
@@ -1513,17 +1516,16 @@ namespace TPToolkitLib
                 }
                 catch { }
             }
-
-            box.Position.X = (minx + maxx) / 2;
-            box.Position.Y = (miny + maxy) / 2;
-            box.Position.Z = (minz + maxz) / 2;
+            var centerX = (minx + maxx) / 2;
+            var centerY = (miny + maxy) / 2;
+            var centerZ = (minz + maxz) / 2;
+            box.Position = center + axis0 * centerX + axis1 * centerY + axis2 * centerZ;
+            box.OCross = axis0;
+            box.OUp = axis1;
+            box.OForward = axis2;
             box.Length.X = (maxx - minx) / 2;
             box.Length.Y = (maxy - miny) / 2;
             box.Length.Z = (maxz - minz) / 2;
-            var tempPos = box.Position;
-            box.Position.X = box.OCross.X * tempPos.X + box.OUp.X * tempPos.Y + box.OForward.X * tempPos.Z;
-            box.Position.Y = box.OCross.Y * tempPos.X + box.OUp.Y * tempPos.Y + box.OForward.Y * tempPos.Z;
-            box.Position.Z = box.OCross.Z * tempPos.X + box.OUp.Z * tempPos.Y + box.OForward.Z * tempPos.Z;
         }
     }
 }
