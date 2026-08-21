@@ -7,7 +7,7 @@ namespace TPToolkitLib.Mesh.Classes
         public string GroupName { get; set; }
         public IList<MdbMeshModel> MeshModels { get; }
         public IList<MdbMaterial> Materials { get; }
-        public CollisionBox CollisionBox { get; }
+        public MdbCollisionBox CollisionBox { get; }
 
         public MdbMesh(string groupName)
         {
