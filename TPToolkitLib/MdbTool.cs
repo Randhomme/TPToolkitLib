@@ -9,7 +9,6 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Text.Json.Nodes;
-using TPToolkitLib.Mesh;
 using TPToolkitLib.Mesh.Classes;
 using TPToolkitLib.Mesh.Structs;
 using TPToolkitLib.Utils;
