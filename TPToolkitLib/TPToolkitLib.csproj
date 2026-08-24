@@ -10,7 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="MeshScene\" />
     <Folder Include="WorldObject\" />
   </ItemGroup>
 
