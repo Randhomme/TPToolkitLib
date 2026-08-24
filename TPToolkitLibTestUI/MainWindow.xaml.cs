@@ -127,5 +127,26 @@ namespace TPToolkitLibUITest
                 }
             }
         }
+
+        // Import msb
+        private void Button_Click_4(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog()
+            {
+                Multiselect = false,
+                DefaultExt = ".obj",
+                Filter = "Mesh scene |*.msb",
+                Title = "Select msb",
+            };
+            var sfd = new SaveFileDialog
+            {
+                DefaultExt = "msb",
+                Filter = "Mesh scene |*.msb",
+            };
+            if (ofd.ShowDialog() == true && sfd.ShowDialog() == true)
+            {
+                var msbScene = MsbTool.MeshSceneFromMsb(ofd.FileName);
+            }
+        }
     }
 }
