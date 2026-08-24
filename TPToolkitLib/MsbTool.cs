@@ -103,13 +103,13 @@ namespace TPToolkitLib
                 // AttributeName
                 msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0B 00 00 00
                 int attributeNameLength = msbReader.ReadInt32();
-                var attributeName = new string(msbReader.ReadChars(nodeNameLength));
+                var attributeName = new string(msbReader.ReadChars(attributeNameLength));
                 msbAttribute.AttributeName = GetAttributeName(attributeName);
 
                 // DescriptorName
                 msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0C 00 00 00
                 int descriptorNameLength = msbReader.ReadInt32();
-                msbAttribute.DescriptorName = new string(msbReader.ReadChars(nodeNameLength));
+                msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
 
                 msbNode.MsbAttirbutes.Add(msbAttribute);
             }
