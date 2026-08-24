@@ -24,7 +24,7 @@ namespace TPToolkitLib.Mesh.Classes
             TextureName = textureName;
         }
 
-        public static string GetMaterialNameFromTextureName(string textureName)
+        private static string GetMaterialNameFromTextureName(string textureName)
         {
             var separator = new char[] { ' ', ';', ',', '+', '\r', '\t', '\n' };
             return Path.GetFileNameWithoutExtension(string.Join("_", textureName.Split(separator)));
