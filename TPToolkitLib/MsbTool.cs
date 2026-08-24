@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.MeshScene.Enums;
 
@@ -19,6 +20,12 @@ namespace TPToolkitLib
         private static MsbScene ReadMsb(string msbFilePath)
         {
             var msbScene = new MsbScene();
+            IList<int> nodeIds = [];
+            IList<int> nodeParentIds = [];
+            IList<int> meshIds = [];
+            IList<int> meshParentIds = [];
+            IList<int> boneIds = [];
+            IList<int> boneParentIds = [];
             using(var msbReader = new BinaryReader(File.OpenRead(msbFilePath)))
             {
                 // Skip 16 bytes (mesh scene size)
@@ -39,14 +46,33 @@ namespace TPToolkitLib
                 // Nodes - Element(s)
                 for (int i = 0; i < nodesSize; i++)
                 {
-                    msbScene.MsbNodes.Add(ReadNodeFromMsb(msbReader));
+                    msbScene.MsbNodes.Add(ReadNodeFromMsb(msbReader, nodeIds, nodeParentIds));
                 }
 
+                // Meshes - Size
+                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0D 00 00 00
+                int meshSize = msbReader.ReadInt32();
+
+                // Meshes - Element(s)
+                for (int i = 0; i < meshSize; i++)
+                {
+                    msbScene.MsbMeshes.Add(ReadMeshFromMsb(msbReader, meshIds, meshParentIds));
+                }
+
+                // Bones - Size
+                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0F 00 00 00
+                int boneSize = msbReader.ReadInt32();
+
+                // Bones - Element(s)
+                for (int i = 0; i < boneSize; i++)
+                {
+                    msbScene.MsbBones.Add(ReadBoneFromMsb(msbReader, boneIds, boneParentIds));
+                }
             }
             return msbScene;
         }
 
-        private static MsbNode ReadNodeFromMsb(BinaryReader msbReader)
+        private static MsbNode ReadNodeFromMsb(BinaryReader msbReader, IList<int> ids, IList<int> parentIds)
         {
             var msbNode = new MsbNode();
 
@@ -54,11 +80,11 @@ namespace TPToolkitLib
 
             // Id
             msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 02 00 00 00
-            int nodeId = msbReader.ReadInt32();
+            ids.Add(msbReader.ReadInt32());
 
             // Parent id
             msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 05 00 00 00
-            int nodeParentId = msbReader.ReadInt32();
+            parentIds.Add(msbReader.ReadInt32());
 
             // Type (can ignore)
             msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 06 00 00 00
@@ -115,6 +141,153 @@ namespace TPToolkitLib
             }
 
             return msbNode;
+        }
+
+        private static MsbMesh ReadMeshFromMsb(BinaryReader msbReader, IList<int> ids, IList<int> parentIds)
+        {
+            var msbMesh = new MsbMesh();
+
+            msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 0E 00 00 00 + mesh length
+
+            // Id
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 02 00 00 00
+            ids.Add(msbReader.ReadInt32());
+
+            // Parent id
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 05 00 00 00
+            parentIds.Add(msbReader.ReadInt32());
+
+            // Type (can ignore)
+            msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 06 00 00 00
+
+            // Name
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 01 00 00 00
+            int meshNameLength = msbReader.ReadInt32();
+            msbMesh.Name = new string(msbReader.ReadChars(meshNameLength));
+
+            // Pivot position
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 07 00 00 00
+            msbMesh.Pivot = new(msbReader.ReadSingle(), msbReader.ReadSingle(), msbReader.ReadSingle());
+
+            // Element (position)
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float x = msbReader.ReadSingle();
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float y = msbReader.ReadSingle();
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float z = msbReader.ReadSingle();
+            msbMesh.Position = new(x, y, z);
+
+            // Element (rotation)
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float yaw = msbReader.ReadSingle();
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float pitch = msbReader.ReadSingle();
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float roll = msbReader.ReadSingle();
+            msbMesh.Rotation = new(yaw, pitch, roll);
+
+            // Attributes - Size
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 09 00 00 00
+            int attributesSize = msbReader.ReadInt32();
+
+            // Attributes - Element
+            for (int j = 0; j < attributesSize; j++)
+            {
+                var msbAttribute = new MsbAttribute();
+                msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 0A 00 00 00 + attribute length
+
+                // AttributeName
+                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0B 00 00 00
+                int attributeNameLength = msbReader.ReadInt32();
+                var attributeName = new string(msbReader.ReadChars(attributeNameLength));
+                msbAttribute.AttributeName = GetAttributeName(attributeName);
+
+                // DescriptorName
+                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0C 00 00 00
+                int descriptorNameLength = msbReader.ReadInt32();
+                msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
+
+                msbMesh.MsbAttirbutes.Add(msbAttribute);
+            }
+
+            return msbMesh;
+        }
+
+        private static MsbBone ReadBoneFromMsb(BinaryReader msbReader, IList<int> ids, IList<int> parentIds)
+        {
+            var msbBone = new MsbBone();
+
+            msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 10 00 00 00 + bone length
+
+            // Id
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 02 00 00 00
+            ids.Add(msbReader.ReadInt32());
+
+            // Parent id
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 05 00 00 00
+            parentIds.Add(msbReader.ReadInt32());
+
+            // Type (can ignore)
+            msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 06 00 00 00
+
+            // Name
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 01 00 00 00
+            int boneNameLength = msbReader.ReadInt32();
+            msbBone.Name = new string(msbReader.ReadChars(boneNameLength));
+
+            // Element (position)
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float x = msbReader.ReadSingle();
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float y = msbReader.ReadSingle();
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float z = msbReader.ReadSingle();
+            msbBone.Position = new(x, y, z);
+
+            // Element (rotation)
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float yaw = msbReader.ReadSingle();
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float pitch = msbReader.ReadSingle();
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
+            float roll = msbReader.ReadSingle();
+            msbBone.Rotation = new(yaw, pitch, roll);
+
+            // Attributes - Size
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 09 00 00 00
+            int attributesSize = msbReader.ReadInt32();
+
+            // Attributes - Element
+            for (int j = 0; j < attributesSize; j++)
+            {
+                var msbAttribute = new MsbAttribute();
+                msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 0A 00 00 00 + attribute length
+
+                // AttributeName
+                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0B 00 00 00
+                int attributeNameLength = msbReader.ReadInt32();
+                var attributeName = new string(msbReader.ReadChars(attributeNameLength));
+                msbAttribute.AttributeName = GetAttributeName(attributeName);
+
+                // DescriptorName
+                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0C 00 00 00
+                int descriptorNameLength = msbReader.ReadInt32();
+                msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
+
+                msbBone.MsbAttirbutes.Add(msbAttribute);
+            }
+
+            // Influence Map Name
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 11 00 00 00
+            int influenceMapNameLength = msbReader.ReadInt32();
+            msbBone.InfluenceMapName = new string(msbReader.ReadChars(influenceMapNameLength));
+
+            // Rest Length
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 12 00 00 00
+            msbBone.RestLength = msbReader.ReadSingle();
+
+            return msbBone;
         }
 
         private static AttributeName GetAttributeName(string attributeName)
