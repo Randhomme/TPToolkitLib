@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Pfim;
+using System.Collections.Generic;
 using System.IO;
+using TPToolkitLib.Mesh.Classes;
 using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.MeshScene.Enums;
 
@@ -26,6 +28,7 @@ namespace TPToolkitLib
             IList<int> meshParentIds = [];
             IList<int> boneIds = [];
             IList<int> boneParentIds = [];
+            IList<int> nodeMotionIds = [];
             using(var msbReader = new BinaryReader(File.OpenRead(msbFilePath)))
             {
                 // Skip 16 bytes (mesh scene size)
@@ -51,23 +54,60 @@ namespace TPToolkitLib
 
                 // Meshes - Size
                 msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0D 00 00 00
-                int meshSize = msbReader.ReadInt32();
+                int meshesSize = msbReader.ReadInt32();
 
                 // Meshes - Element(s)
-                for (int i = 0; i < meshSize; i++)
+                for (int i = 0; i < meshesSize; i++)
                 {
                     msbScene.MsbMeshes.Add(ReadMeshFromMsb(msbReader, meshIds, meshParentIds));
                 }
 
                 // Bones - Size
                 msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0F 00 00 00
-                int boneSize = msbReader.ReadInt32();
+                int bonesSize = msbReader.ReadInt32();
 
                 // Bones - Element(s)
-                for (int i = 0; i < boneSize; i++)
+                for (int i = 0; i < bonesSize; i++)
                 {
                     msbScene.MsbBones.Add(ReadBoneFromMsb(msbReader, boneIds, boneParentIds));
                 }
+
+                // Animations - Size
+                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 13 00 00 00
+                int animationsSize = msbReader.ReadInt32();
+
+                // Animations - Element(s)
+                for (int i = 0; i < animationsSize; i++)
+                {
+                    msbScene.MsbAnimations.Add(ReadAnimationFromMsb(msbReader, nodeMotionIds));
+                }
+            }
+            // Set parent for every element and motion
+            for (int i = 0; i < msbScene.MsbNodes.Count; i++)
+            {
+                var msbNode = msbScene.MsbNodes[i];
+                msbNode.Parent = GetElementFromId(nodeParentIds[i], msbScene, nodeIds, meshIds, boneIds);
+            }
+            for (int i = 0; i < msbScene.MsbMeshes.Count; i++)
+            {
+                var msbMesh = msbScene.MsbMeshes[i];
+                msbMesh.Parent = GetElementFromId(meshParentIds[i], msbScene, nodeIds, meshIds, boneIds);
+            }
+            for (int i = 0; i < msbScene.MsbBones.Count; i++)
+            {
+                var msbBone = msbScene.MsbBones[i];
+                msbBone.Parent = GetElementFromId(boneParentIds[i], msbScene, nodeIds, meshIds, boneIds);
+            }
+            int nodeMotionCount = 0;
+            for (int i = 0; i < msbScene.MsbAnimations.Count; i++)
+            {
+                var msbAnimation = msbScene.MsbAnimations[i];
+                for (int j = 0; j < msbAnimation.MsbMotions.Count; j++)
+                {
+                    var msbMotion = msbAnimation.MsbMotions[j];
+                    msbMotion.MsbElement = GetElementFromId(nodeMotionIds[j + nodeMotionCount], msbScene, nodeIds, meshIds, boneIds);
+                }
+                nodeMotionCount += msbAnimation.MsbMotions.Count;
             }
             return msbScene;
         }
@@ -236,6 +276,10 @@ namespace TPToolkitLib
             int boneNameLength = msbReader.ReadInt32();
             msbBone.Name = new string(msbReader.ReadChars(boneNameLength));
 
+            // Pivot position
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 07 00 00 00
+            msbBone.Pivot = new(msbReader.ReadSingle(), msbReader.ReadSingle(), msbReader.ReadSingle());
+
             // Element (position)
             msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 08 00 00 00
             float x = msbReader.ReadSingle();
@@ -290,6 +334,107 @@ namespace TPToolkitLib
             return msbBone;
         }
 
+        private static MsbAnimation ReadAnimationFromMsb(BinaryReader msbReader, IList<int> nodeMotionIds)
+        {
+            var msbAnimation = new MsbAnimation();
+
+            msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 14 00 00 00 + animation length
+
+            // Name
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 01 00 00 00
+            int animationNameLength = msbReader.ReadInt32();
+            msbAnimation.Name = new string(msbReader.ReadChars(animationNameLength));
+
+            // Duration
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 15 00 00 00
+            msbAnimation.Duration = msbReader.ReadSingle();
+
+            // Node Motion Count
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 16 00 00 00
+            int nodeMotionCount = msbReader.ReadInt32();
+
+            for (int i = 0; i < nodeMotionCount; i++)
+            {
+                msbAnimation.MsbMotions.Add(ReadMotionFromMsb(msbReader, nodeMotionIds));
+            }
+
+            return msbAnimation;
+        }
+
+        private static MsbMotion ReadMotionFromMsb(BinaryReader msbReader, IList<int> nodeMotionIds)
+        {
+            var msbMotion = new MsbMotion();
+
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 17 00 00 00
+            nodeMotionIds.Add(msbReader.ReadInt32());
+
+            msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 18 00 00 00 + motion length
+
+            ReadChannelFromMsb(msbReader, msbMotion.MsbChannel1);
+            ReadChannelFromMsb(msbReader, msbMotion.MsbChannel2);
+            ReadChannelFromMsb(msbReader, msbMotion.MsbChannel3);
+            ReadChannelFromMsb(msbReader, msbMotion.MsbChannel4);
+            ReadChannelFromMsb(msbReader, msbMotion.MsbChannel5);
+            ReadChannelFromMsb(msbReader, msbMotion.MsbChannel6);
+
+            return msbMotion;
+        }
+
+        private static void ReadChannelFromMsb(BinaryReader msbReader, IList<MsbKeyframe> channel)
+        {
+            msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 19 00 00 00 + channel length
+
+            // Keyframes - Size
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 1A 00 00 00
+            int keyframesSize = msbReader.ReadInt32();
+
+            for (int i = 0; i < keyframesSize; i++)
+            {
+                channel.Add(ReadKeyframeFromMsb(msbReader));
+            }
+        }
+
+        private static MsbKeyframe ReadKeyframeFromMsb(BinaryReader msbReader)
+        {
+            var msbKeyframe = new MsbKeyframe();
+
+            msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 1B 00 00 00 + keyframe length
+
+            // Time
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 1C 00 00 00
+            msbKeyframe.Time = msbReader.ReadSingle();
+
+            // Value
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 1D 00 00 00
+            msbKeyframe.Value = msbReader.ReadSingle();
+
+            // Value
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 1E 00 00 00
+            msbKeyframe.Smoothing = msbReader.ReadInt32();
+
+            // Tension
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 1F 00 00 00
+            msbKeyframe.Tension = msbReader.ReadSingle();
+
+            // Continuity
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 20 00 00 00
+            msbKeyframe.Continuity = msbReader.ReadSingle();
+
+            // Bias
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 21 00 00 00
+            msbKeyframe.Bias = msbReader.ReadSingle();
+
+            // Incoming Tangent
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 22 00 00 00
+            msbKeyframe.IncomingTangent = msbReader.ReadSingle();
+
+            // Outgoing Tangent
+            msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 23 00 00 00
+            msbKeyframe.OutgoingTangent = msbReader.ReadSingle();
+
+            return msbKeyframe;
+        }
+
         private static AttributeName GetAttributeName(string attributeName)
         {
             return attributeName switch
@@ -309,6 +454,32 @@ namespace TPToolkitLib
                 "WakePlacement" => AttributeName.WakePlacement,
                 _ => AttributeName.GunPlacement,
             };
+        }
+
+        private static MsbElement? GetElementFromId(int id, MsbScene msbScene, IList<int> nodeIds, IList<int> meshIds, IList<int> boneIds)
+        {
+            for (int i = 0; i < nodeIds.Count; i++)
+            {
+                if (nodeIds[i] == id)
+                {
+                    return msbScene.MsbNodes[i];
+                }
+            }
+            for (int i = 0; i < meshIds.Count; i++)
+            {
+                if (meshIds[i] == id)
+                {
+                    return msbScene.MsbMeshes[i];
+                }
+            }
+            for (int i = 0; i < boneIds.Count; i++)
+            {
+                if (boneIds[i] == id)
+                {
+                    return msbScene.MsbBones[i];
+                }
+            }
+            return null;
         }
     }
 }
