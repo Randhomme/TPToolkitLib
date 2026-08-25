@@ -2,7 +2,7 @@
 {
     public class MsbBone : MsbElement
     {
-        public string InfluenceMapName { get; set; } = "default";
+        public string InfluenceMapName { get; set; } = string.Empty;
         public float RestLength { get; set; }
     }
 }
