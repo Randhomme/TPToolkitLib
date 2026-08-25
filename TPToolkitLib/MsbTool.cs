@@ -1,7 +1,5 @@
-﻿using Pfim;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using TPToolkitLib.Mesh.Classes;
 using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.MeshScene.Enums;
 
