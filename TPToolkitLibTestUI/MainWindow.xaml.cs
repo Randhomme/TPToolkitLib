@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WF = System.Windows.Forms;
 using TPToolkitLib;
+using TPToolkitLib.MeshScene.Classes;
 
 namespace TPToolkitLibUITest
 {
@@ -128,12 +129,45 @@ namespace TPToolkitLibUITest
             }
         }
 
-        // Import msb
+        // Open msb
         private void Button_Click_4(object sender, RoutedEventArgs e)
         {
             var ofd = new OpenFileDialog()
             {
-                Multiselect = false,
+                Multiselect = true,
+                DefaultExt = ".obj",
+                Filter = "Mesh scene |*.msb",
+                Title = "Select msb",
+            };
+            if (ofd.ShowDialog() == true)
+            {
+                var msbScene = MsbTool.MeshSceneFromMsbs(ofd.FileNames);
+            }
+        }
+
+        // Import msb
+        private void Button_Click_5(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog()
+            {
+                Multiselect = true,
+                DefaultExt = ".obj",
+                Filter = "Mesh scene |*.msb",
+                Title = "Select msb",
+            };
+            if (ofd.ShowDialog() == true)
+            {
+                var msbScene = new MsbScene();
+                MsbTool.ImportMsbSceneFromMsbs(msbScene, ofd.FileNames);
+            }
+        }
+
+        // Open and Export msb
+        private void Button_Click_6(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog()
+            {
+                Multiselect = true,
                 DefaultExt = ".obj",
                 Filter = "Mesh scene |*.msb",
                 Title = "Select msb",
@@ -145,7 +179,7 @@ namespace TPToolkitLibUITest
             };
             if (ofd.ShowDialog() == true && sfd.ShowDialog() == true)
             {
-                var msbScene = MsbTool.MeshSceneFromMsb(ofd.FileName);
+                var msbScene = MsbTool.MeshSceneFromMsbs(ofd.FileNames);
             }
         }
     }

@@ -7,14 +7,61 @@ namespace TPToolkitLib
 {
     public static class MsbTool
     {
+        public static MsbScene MeshSceneFromMsbs(string[] msbFilePaths)
+        {
+            var msbScene = new MsbScene();
+            for (int i = 0; i < msbFilePaths.Length; i++)
+            {
+                var msbFilePath = msbFilePaths[i];
+                var tempMsbScene = MeshSceneFromMsb(msbFilePath);
+                MergeMeshScenes(msbScene, tempMsbScene);
+            }
+            return msbScene;
+        }
+
         public static MsbScene MeshSceneFromMsb(string msbFilePath)
         {
             return ReadMsb(msbFilePath);
         }
 
+        public static void ImportMsbSceneFromMsbs(MsbScene msbScene, string[] msbFilePaths)
+        {
+            for (int i = 0; i < msbFilePaths.Length; i++)
+            {
+                var msbFilePath = msbFilePaths[i];
+                ImportMsbSceneFromMsb(msbScene, msbFilePath);
+            }
+        }
+
+        public static void ImportMsbSceneFromMsb(MsbScene msbScene, string msbFilePath)
+        {
+            var tempMsbScene = MeshSceneFromMsb(msbFilePath);
+            MergeMeshScenes(msbScene, tempMsbScene);
+        }
+
         public static void MeshSceneToMsb(MsbScene msbScene, string msbFilePath)
         {
 
+        }
+
+        private static void MergeMeshScenes(MsbScene msbScene1, MsbScene msbScene2)
+        {
+            for (int i = 0; i < msbScene2.MsbNodes.Count; i++)
+            {
+                msbScene1.MsbNodes.Add(msbScene2.MsbNodes[i]);
+            }
+            for (int i = 0; i < msbScene2.MsbMeshes.Count; i++)
+            {
+                msbScene1.MsbMeshes.Add(msbScene2.MsbMeshes[i]);
+            }
+            for (int i = 0; i < msbScene2.MsbBones.Count; i++)
+            {
+                msbScene1.MsbBones.Add(msbScene2.MsbBones[i]);
+            }
+            for (int i = 0; i < msbScene2.MsbAnimations.Count; i++)
+            {
+                msbScene1.MsbAnimations.Add(msbScene2.MsbAnimations[i]);
+            }
         }
 
         private static MsbScene ReadMsb(string msbFilePath)
