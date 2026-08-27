@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.MeshScene.Enums;
 
@@ -41,11 +42,13 @@ namespace TPToolkitLib
 
         public static void MeshSceneToMsb(MsbScene msbScene, string msbFilePath)
         {
-
+            WriteMsbSceneToMsb(msbScene, msbFilePath);
         }
 
         private static void MergeMeshScenes(MsbScene msbScene1, MsbScene msbScene2)
         {
+            msbScene1.Name = msbScene2.Name;
+            msbScene1.RootMsbElement = msbScene2.RootMsbElement;
             for (int i = 0; i < msbScene2.MsbNodes.Count; i++)
             {
                 msbScene1.MsbNodes.Add(msbScene2.MsbNodes[i]);
@@ -67,6 +70,7 @@ namespace TPToolkitLib
         private static MsbScene ReadMsb(string msbFilePath)
         {
             var msbScene = new MsbScene();
+            int id = -1;
             IList<int> nodeIds = [];
             IList<int> nodeParentIds = [];
             IList<int> meshIds = [];
@@ -85,7 +89,7 @@ namespace TPToolkitLib
 
                 // Root element id
                 msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 02 00 00 00
-                int id = msbReader.ReadInt32();
+                id = msbReader.ReadInt32();
 
                 // Nodes - Size
                 msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 03 00 00 00
@@ -127,6 +131,10 @@ namespace TPToolkitLib
                     msbScene.MsbAnimations.Add(ReadAnimationFromMsb(msbReader, nodeMotionIds));
                 }
             }
+
+            // Get root element
+            msbScene.RootMsbElement = GetElementFromId(id, msbScene, nodeIds, meshIds, boneIds);
+
             // Set parent for every element and motion
             for (int i = 0; i < msbScene.MsbNodes.Count; i++)
             {
@@ -155,6 +163,73 @@ namespace TPToolkitLib
                 nodeMotionCount += msbAnimation.MsbMotions.Count;
             }
             return msbScene;
+        }
+
+        private static void WriteMsbSceneToMsb(MsbScene msbScene, string msbFilePath)
+        {
+            using(var msbWriter = new BinaryWriter(File.Open(msbFilePath, FileMode.Create)))
+            {
+                msbWriter.Write(0);
+                msbWriter.Write(0);
+                msbWriter.Write(0);
+
+                // Mesh scene name
+                msbWriter.Write(1);
+                msbWriter.Write(msbScene.Name.Length);
+                msbWriter.Write(Encoding.Default.GetBytes(msbScene.Name));
+
+                // Root element id
+                msbWriter.Write(2);
+                msbWriter.Write(GetIdFromElement(msbScene.RootMsbElement, msbScene));
+
+                // Nodes - Size
+                msbWriter.Write(3);
+                msbWriter.Write(msbScene.MsbNodes.Count);
+
+                // Nodes - Element
+                for (int i = 0; i < msbScene.MsbNodes.Count; i++)
+                {
+                    var msbNode = msbScene.MsbNodes[i];
+                    WriteMsbNodeToMsb(msbNode, msbScene, i, msbWriter);
+                }
+
+                var elementId = msbScene.MsbNodes.Count;
+
+                // Meshes - Size
+                msbWriter.Write(13);
+                msbWriter.Write(msbScene.MsbMeshes.Count);
+
+                // Meshes - Element
+                for (int i = 0; i < msbScene.MsbMeshes.Count; i++)
+                {
+                    var msbMesh = msbScene.MsbMeshes[i];
+                    WriteMsbMeshToMsb(msbMesh, msbScene, i + elementId, msbWriter);
+                }
+
+                elementId += msbScene.MsbMeshes.Count;
+
+                // Bones - Size
+                msbWriter.Write(15);
+                msbWriter.Write(msbScene.MsbBones.Count);
+
+                // Bones - Element
+                for (int i = 0; i < msbScene.MsbBones.Count; i++)
+                {
+                    var msbBone = msbScene.MsbBones[i];
+                    WriteMsbBoneToMsb(msbBone, msbScene, i + elementId, msbWriter);
+                }
+
+                // Animations - Size
+                msbWriter.Write(19);
+                msbWriter.Write(msbScene.MsbAnimations.Count);
+
+                // Animations - Element
+                for (int i = 0; i < msbScene.MsbAnimations.Count; i++)
+                {
+                    var msbAnimation = msbScene.MsbAnimations[i];
+                    WriteMsbAnimationToMsb(msbAnimation, msbScene, msbWriter);
+                }
+            }
         }
 
         private static MsbNode ReadNodeFromMsb(BinaryReader msbReader, IList<int> ids, IList<int> parentIds)
@@ -480,6 +555,334 @@ namespace TPToolkitLib
             return msbKeyframe;
         }
 
+        private static void WriteMsbNodeToMsb(MsbNode msbNode, MsbScene msbScene, int id, BinaryWriter msbWriter)
+        {
+            msbWriter.Write(4);
+            var pos = msbWriter.BaseStream.Position;
+            msbWriter.Write(0);
+
+            // ID
+            msbWriter.Write(2);
+            msbWriter.Write(id);
+
+            // Parent ID
+            msbWriter.Write(5);
+            msbWriter.Write(GetIdFromElement(msbNode.Parent, msbScene));
+
+            // Type
+            msbWriter.Write(6);
+            msbWriter.Write(0);
+
+            // Name
+            msbWriter.Write(1);
+            msbWriter.Write(msbNode.Name.Length);
+            msbWriter.Write(Encoding.Default.GetBytes(msbNode.Name));
+
+            // Pivot Position
+            msbWriter.Write(7);
+            msbWriter.Write(msbNode.Pivot.X);
+            msbWriter.Write(msbNode.Pivot.Y);
+            msbWriter.Write(msbNode.Pivot.Z);
+
+            // Elements
+            msbWriter.Write(8);
+            msbWriter.Write(msbNode.Position.X);
+            msbWriter.Write(8);
+            msbWriter.Write(msbNode.Position.Y);
+            msbWriter.Write(8);
+            msbWriter.Write(msbNode.Position.Z);
+            msbWriter.Write(8);
+            msbWriter.Write(msbNode.Rotation.X);
+            msbWriter.Write(8);
+            msbWriter.Write(msbNode.Rotation.Y);
+            msbWriter.Write(8);
+            msbWriter.Write(msbNode.Rotation.Z);
+
+            // Attributes - Size
+            msbWriter.Write(9);
+            msbWriter.Write(msbNode.MsbAttirbutes.Count);
+
+            // Attributes - Element
+            for (int i= 0; i < msbNode.MsbAttirbutes.Count; i++)
+            {
+                WriteMsbAttributeToMsb(msbNode.MsbAttirbutes[i], msbWriter);
+            }
+
+            var blockLength = msbWriter.BaseStream.Position - pos - 4;
+            msbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            msbWriter.Write((int)blockLength);
+            msbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteMsbMeshToMsb(MsbMesh msbMesh, MsbScene msbScene, int id, BinaryWriter msbWriter)
+        {
+            msbWriter.Write(14);
+            var pos = msbWriter.BaseStream.Position;
+            msbWriter.Write(0);
+
+            // ID
+            msbWriter.Write(2);
+            msbWriter.Write(id);
+
+            // Parent ID
+            msbWriter.Write(5);
+            msbWriter.Write(GetIdFromElement(msbMesh.Parent, msbScene));
+
+            // Type
+            msbWriter.Write(6);
+            msbWriter.Write(1);
+
+            // Name
+            msbWriter.Write(1);
+            msbWriter.Write(msbMesh.Name.Length);
+            msbWriter.Write(Encoding.Default.GetBytes(msbMesh.Name));
+
+            // Pivot Position
+            msbWriter.Write(7);
+            msbWriter.Write(msbMesh.Pivot.X);
+            msbWriter.Write(msbMesh.Pivot.Y);
+            msbWriter.Write(msbMesh.Pivot.Z);
+
+            // Elements
+            msbWriter.Write(8);
+            msbWriter.Write(msbMesh.Position.X);
+            msbWriter.Write(8);
+            msbWriter.Write(msbMesh.Position.Y);
+            msbWriter.Write(8);
+            msbWriter.Write(msbMesh.Position.Z);
+            msbWriter.Write(8);
+            msbWriter.Write(msbMesh.Rotation.X);
+            msbWriter.Write(8);
+            msbWriter.Write(msbMesh.Rotation.Y);
+            msbWriter.Write(8);
+            msbWriter.Write(msbMesh.Rotation.Z);
+
+            // Attributes - Size
+            msbWriter.Write(9);
+            msbWriter.Write(msbMesh.MsbAttirbutes.Count);
+
+            // Attributes - Element
+            for (int i = 0; i < msbMesh.MsbAttirbutes.Count; i++)
+            {
+                WriteMsbAttributeToMsb(msbMesh.MsbAttirbutes[i], msbWriter);
+            }
+
+            var blockLength = msbWriter.BaseStream.Position - pos - 4;
+            msbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            msbWriter.Write((int)blockLength);
+            msbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteMsbBoneToMsb(MsbBone msbBone, MsbScene msbScene, int id, BinaryWriter msbWriter)
+        {
+            msbWriter.Write(16);
+            var pos = msbWriter.BaseStream.Position;
+            msbWriter.Write(0);
+
+            // ID
+            msbWriter.Write(2);
+            msbWriter.Write(id);
+
+            // Parent ID
+            msbWriter.Write(5);
+            msbWriter.Write(GetIdFromElement(msbBone.Parent, msbScene));
+
+            // Type
+            msbWriter.Write(6);
+            msbWriter.Write(2);
+
+            // Name
+            msbWriter.Write(1);
+            msbWriter.Write(msbBone.Name.Length);
+            msbWriter.Write(Encoding.Default.GetBytes(msbBone.Name));
+
+            // Pivot Position
+            msbWriter.Write(7);
+            msbWriter.Write(msbBone.Pivot.X);
+            msbWriter.Write(msbBone.Pivot.Y);
+            msbWriter.Write(msbBone.Pivot.Z);
+
+            // Elements
+            msbWriter.Write(8);
+            msbWriter.Write(msbBone.Position.X);
+            msbWriter.Write(8);
+            msbWriter.Write(msbBone.Position.Y);
+            msbWriter.Write(8);
+            msbWriter.Write(msbBone.Position.Z);
+            msbWriter.Write(8);
+            msbWriter.Write(msbBone.Rotation.X);
+            msbWriter.Write(8);
+            msbWriter.Write(msbBone.Rotation.Y);
+            msbWriter.Write(8);
+            msbWriter.Write(msbBone.Rotation.Z);
+
+            // Attributes - Size
+            msbWriter.Write(9);
+            msbWriter.Write(msbBone.MsbAttirbutes.Count);
+
+            // Attributes - Element
+            for (int i = 0; i < msbBone.MsbAttirbutes.Count; i++)
+            {
+                WriteMsbAttributeToMsb(msbBone.MsbAttirbutes[i], msbWriter);
+            }
+
+            // Influence Map Name
+            msbWriter.Write(17);
+            msbWriter.Write(msbBone.InfluenceMapName.Length);
+            msbWriter.Write(Encoding.Default.GetBytes(msbBone.InfluenceMapName));
+
+            // Rest Length
+            msbWriter.Write(18);
+            msbWriter.Write(msbBone.RestLength);
+
+            var blockLength = msbWriter.BaseStream.Position - pos - 4;
+            msbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            msbWriter.Write((int)blockLength);
+            msbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteMsbAnimationToMsb(MsbAnimation msbAnimation, MsbScene msbScene, BinaryWriter msbWriter)
+        {
+            msbWriter.Write(20);
+            var pos = msbWriter.BaseStream.Position;
+            msbWriter.Write(0);
+
+            // Name
+            msbWriter.Write(1);
+            msbWriter.Write(msbAnimation.Name.Length);
+            msbWriter.Write(Encoding.Default.GetBytes(msbAnimation.Name));
+
+            // Duration
+            msbWriter.Write(21);
+            msbWriter.Write(msbAnimation.Duration);
+
+            // Node Motion Count
+            msbWriter.Write(22);
+            msbWriter.Write(msbAnimation.MsbMotions.Count);
+
+            for (int i = 0; i < msbAnimation.MsbMotions.Count; i++)
+            {
+                var msbMotion = msbAnimation.MsbMotions[i];
+                WriteMsbMotionToMsb(msbMotion, msbScene, msbWriter);
+            }
+
+            var blockLength = msbWriter.BaseStream.Position - pos - 4;
+            msbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            msbWriter.Write((int)blockLength);
+            msbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteMsbAttributeToMsb(MsbAttribute msbAttribute, BinaryWriter msbWriter)
+        {
+            msbWriter.Write(10);
+            var pos = msbWriter.BaseStream.Position;
+            msbWriter.Write(0);
+
+            // Attribute Name
+            msbWriter.Write(11);
+            var attributeName = msbAttribute.AttributeName.ToString();
+            msbWriter.Write(attributeName.Length);
+            msbWriter.Write(Encoding.Default.GetBytes(attributeName));
+
+            // Descriptor Name
+            msbWriter.Write(12);
+            msbWriter.Write(msbAttribute.DescriptorName.Length);
+            msbWriter.Write(Encoding.Default.GetBytes(msbAttribute.DescriptorName));
+
+            var blockLength = msbWriter.BaseStream.Position - pos - 4;
+            msbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            msbWriter.Write((int)blockLength);
+            msbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteMsbMotionToMsb(MsbMotion msbMotion, MsbScene msbScene, BinaryWriter msbWriter)
+        {
+            msbWriter.Write(23);
+            msbWriter.Write(GetIdFromElement(msbMotion.MsbElement, msbScene));
+
+            msbWriter.Write(24);
+            var pos = msbWriter.BaseStream.Position;
+            msbWriter.Write(0);
+
+            WriteMsbChannelToMsb(msbMotion.MsbChannel1, msbWriter);
+            WriteMsbChannelToMsb(msbMotion.MsbChannel2, msbWriter);
+            WriteMsbChannelToMsb(msbMotion.MsbChannel3, msbWriter);
+            WriteMsbChannelToMsb(msbMotion.MsbChannel4, msbWriter);
+            WriteMsbChannelToMsb(msbMotion.MsbChannel5, msbWriter);
+            WriteMsbChannelToMsb(msbMotion.MsbChannel6, msbWriter);
+
+            var blockLength = msbWriter.BaseStream.Position - pos - 4;
+            msbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            msbWriter.Write((int)blockLength);
+            msbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteMsbChannelToMsb(IList<MsbKeyframe> channel, BinaryWriter msbWriter)
+        {
+            msbWriter.Write(25);
+            var pos = msbWriter.BaseStream.Position;
+            msbWriter.Write(0);
+
+            // Keyframes - Size
+            msbWriter.Write(26);
+            msbWriter.Write(channel.Count);
+
+            // Keyframes - Element
+            for (int i = 0; i < channel.Count; i++)
+            {
+                WriteMsbKeyframeToMsb(channel[i], msbWriter);
+            }
+
+            var blockLength = msbWriter.BaseStream.Position - pos - 4;
+            msbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            msbWriter.Write((int)blockLength);
+            msbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteMsbKeyframeToMsb(MsbKeyframe msbKeyframe, BinaryWriter msbWriter)
+        {
+            msbWriter.Write(27);
+            var pos = msbWriter.BaseStream.Position;
+            msbWriter.Write(0);
+
+            // Time
+            msbWriter.Write(28);
+            msbWriter.Write(msbKeyframe.Time);
+
+            // Value
+            msbWriter.Write(29);
+            msbWriter.Write(msbKeyframe.Value);
+
+            // Smoothing
+            msbWriter.Write(30);
+            msbWriter.Write(msbKeyframe.Smoothing);
+
+            // Tension
+            msbWriter.Write(31);
+            msbWriter.Write(msbKeyframe.Tension);
+
+            // Continuity
+            msbWriter.Write(32);
+            msbWriter.Write(msbKeyframe.Continuity);
+
+            // Bias
+            msbWriter.Write(33);
+            msbWriter.Write(msbKeyframe.Bias);
+
+            // Incoming Tangent
+            msbWriter.Write(34);
+            msbWriter.Write(msbKeyframe.IncomingTangent);
+
+            // Outgoing Tangent
+            msbWriter.Write(35);
+            msbWriter.Write(msbKeyframe.OutgoingTangent);
+
+            var blockLength = msbWriter.BaseStream.Position - pos - 4;
+            msbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
+            msbWriter.Write((int)blockLength);
+            msbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
         private static AttributeName GetAttributeName(string attributeName)
         {
             return attributeName switch
@@ -503,28 +906,57 @@ namespace TPToolkitLib
 
         private static MsbElement? GetElementFromId(int id, MsbScene msbScene, IList<int> nodeIds, IList<int> meshIds, IList<int> boneIds)
         {
-            for (int i = 0; i < nodeIds.Count; i++)
+            if (id >= 0)
             {
-                if (nodeIds[i] == id)
+                for (int i = 0; i < nodeIds.Count; i++)
                 {
-                    return msbScene.MsbNodes[i];
+                    if (nodeIds[i] == id)
+                    {
+                        return msbScene.MsbNodes[i];
+                    }
                 }
-            }
-            for (int i = 0; i < meshIds.Count; i++)
-            {
-                if (meshIds[i] == id)
+                for (int i = 0; i < meshIds.Count; i++)
                 {
-                    return msbScene.MsbMeshes[i];
+                    if (meshIds[i] == id)
+                    {
+                        return msbScene.MsbMeshes[i];
+                    }
                 }
-            }
-            for (int i = 0; i < boneIds.Count; i++)
-            {
-                if (boneIds[i] == id)
+                for (int i = 0; i < boneIds.Count; i++)
                 {
-                    return msbScene.MsbBones[i];
+                    if (boneIds[i] == id)
+                    {
+                        return msbScene.MsbBones[i];
+                    }
                 }
             }
             return null;
+        }
+
+        private static int GetIdFromElement(MsbElement? msbElement, MsbScene msbScene)
+        {
+            if (msbElement != null)
+            {
+                for (int i = 0; i < msbScene.MsbNodes.Count; i++)
+                {
+                    var msbNode = msbScene.MsbNodes[i];
+                    if (msbElement == msbNode)
+                        return i;
+                }
+                for (int i = 0; i < msbScene.MsbMeshes.Count; i++)
+                {
+                    var msbMesh = msbScene.MsbMeshes[i];
+                    if (msbElement == msbMesh)
+                        return i + msbScene.MsbNodes.Count;
+                }
+                for (int i = 0; i < msbScene.MsbBones.Count; i++)
+                {
+                    var msbBone = msbScene.MsbBones[i];
+                    if (msbElement == msbBone)
+                        return i + msbScene.MsbNodes.Count + msbScene.MsbMeshes.Count;
+                }
+            }
+            return -1;
         }
     }
 }
