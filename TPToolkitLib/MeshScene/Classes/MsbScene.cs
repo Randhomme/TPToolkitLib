@@ -10,5 +10,10 @@ namespace TPToolkitLib.MeshScene.Classes
         public IList<MsbMesh> MsbMeshes { get; } = [];
         public IList<MsbBone> MsbBones { get; } = [];
         public IList<MsbAnimation> MsbAnimations { get; } = [];
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }
