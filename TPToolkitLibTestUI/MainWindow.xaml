@@ -14,6 +14,7 @@
             <Button Margin="5" Content="X GLB/OBJ to X MDB" Click="Button_Click_3"/>
             <Button Margin="5" Content="Open MSBS" Click="Button_Click_4"/>
             <Button Margin="5" Content="Import MSBS" Click="Button_Click_5"/>
+            <Button Margin="5" Content="Import and Export MSBS" Click="Button_Click_6"/>
         </StackPanel>
     </Grid>
 </Window>

@@ -180,6 +180,7 @@ namespace TPToolkitLibUITest
             if (ofd.ShowDialog() == true && sfd.ShowDialog() == true)
             {
                 var msbScene = MsbTool.MeshSceneFromMsbs(ofd.FileNames);
+                MsbTool.MeshSceneToMsb(msbScene, sfd.FileName);
             }
         }
     }
