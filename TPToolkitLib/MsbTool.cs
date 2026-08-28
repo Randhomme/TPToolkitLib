@@ -229,6 +229,15 @@ namespace TPToolkitLib
                     var msbAnimation = msbScene.MsbAnimations[i];
                     WriteMsbAnimationToMsb(msbAnimation, msbScene, msbWriter);
                 }
+
+                var pos = msbWriter.BaseStream.Position;
+                msbWriter.BaseStream.Seek(0, SeekOrigin.Begin);
+                msbWriter.Write(pos);
+                msbWriter.Write((int)pos - 12);
+                msbWriter.BaseStream.Seek(0, SeekOrigin.End);
+
+                // Ending strings
+                WriteEndingStringsToMsb(msbWriter);
             }
         }
 
@@ -881,6 +890,55 @@ namespace TPToolkitLib
             msbWriter.BaseStream.Seek(pos, SeekOrigin.Begin);
             msbWriter.Write((int)blockLength);
             msbWriter.BaseStream.Seek(0, SeekOrigin.End);
+        }
+
+        private static void WriteEndingStringsToMsb(BinaryWriter msbWriter)
+        {
+            IList<string> endingStrings = [
+                "Mesh Scene Data",
+                "Name",
+                "ID",
+                "Nodes - Size",
+                "Nodes - Element",
+                "Parent ID",
+                "Type",
+                "Pivot Position",
+                "Element",
+                "Attributes - Size",
+                "Attributes - Element",
+                "AttributeName",
+                "DescriptorName",
+                "Meshes - Size",
+                "Meshes - Element",
+                "Bones - Size",
+                "Bones - Element",
+                "Influence Map Name",
+                "Rest Length",
+                "Animations - Size",
+                "Animations - Element",
+                "Duration",
+                "Node Motion Count",
+                "Node ID",
+                "Motion",
+                "Channel",
+                "Keyframes - Size",
+                "Keyframes - Element",
+                "Time",
+                "Value",
+                "Smoothing",
+                "Tension",
+                "Continuity",
+                "Bias",
+                "Incoming Tangent",
+                "Outgoing Tangent",
+            ];
+            msbWriter.Write(36);
+            for (int i = 0; i < endingStrings.Count; i++)
+            {
+                var str = endingStrings[i];
+                msbWriter.Write(str.Length);
+                msbWriter.Write(Encoding.Default.GetBytes(str));
+            }
         }
 
         private static AttributeName GetAttributeName(string attributeName)
