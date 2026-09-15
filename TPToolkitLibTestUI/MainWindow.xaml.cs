@@ -11,10 +11,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 using WF = System.Windows.Forms;
 using TPToolkitLib;
 using TPToolkitLib.MeshScene.Classes;
+using System.IO;
 
 namespace TPToolkitLibUITest
 {
@@ -181,6 +181,41 @@ namespace TPToolkitLibUITest
             {
                 var msbScene = MsbTool.MeshSceneFromMsbs(ofd.FileNames);
                 MsbTool.MeshSceneToMsb(msbScene, sfd.FileName);
+            }
+        }
+
+        // Open wot
+        private void Button_Click_7(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog()
+            {
+                Multiselect = true,
+                DefaultExt = ".wot",
+                Filter = "World object |*.wot",
+                Title = "Select wot",
+            };
+            if (ofd.ShowDialog() == true)
+            {
+                var wot = WotTool.WorldObjectFromWot(ofd.FileName, false);
+            }
+        }
+
+        // Open wot folder
+        private void Button_Click_8(object sender, RoutedEventArgs e)
+        {
+            var ofbd = new WF.FolderBrowserDialog()
+            {
+                Description = "Select a folder to export",
+                ShowNewFolderButton = false,
+            };
+            if(ofbd.ShowDialog() == WF.DialogResult.OK)
+            {
+                var files = Directory.GetFiles(ofbd.SelectedPath);
+                for (int i = 0; i < files.Length; i++)
+                {
+                    var file = files[i];
+                    var wot = WotTool.WorldObjectFromWot(file, false);
+                }
             }
         }
     }
