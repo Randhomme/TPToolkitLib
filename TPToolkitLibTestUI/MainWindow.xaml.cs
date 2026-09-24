@@ -28,7 +28,20 @@ namespace TPToolkitLibUITest
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
             InitializeComponent();
-            
+            //SelectTPGameFolder();
+        }
+
+        private void SelectTPGameFolder()
+        {
+            var ofbd = new WF.FolderBrowserDialog()
+            {
+                Description = "Select TPGame folder",
+                ShowNewFolderButton = false,
+            };
+            if (ofbd.ShowDialog() == WF.DialogResult.OK)
+            {
+                TPGameTool.LoadTPGameFolder(ofbd.SelectedPath);
+            }
         }
 
         // X mdb to 1 3d file
@@ -205,12 +218,12 @@ namespace TPToolkitLibUITest
         {
             var ofbd = new WF.FolderBrowserDialog()
             {
-                Description = "Select a folder to export",
+                Description = "Select the wot folder",
                 ShowNewFolderButton = false,
             };
             if(ofbd.ShowDialog() == WF.DialogResult.OK)
             {
-                var files = Directory.GetFiles(ofbd.SelectedPath);
+                var files = Directory.GetFiles(ofbd.SelectedPath, "*.wot");
                 for (int i = 0; i < files.Length; i++)
                 {
                     var file = files[i];
