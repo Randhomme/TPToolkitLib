@@ -5,10 +5,28 @@ namespace TPToolkitLib.Utils
 {
     public static class DataImportExtensions
     {
+        public static string ReadString(this StreamReader reader, string prefix)
+        {
+            var line = reader.ReadLine().Trim();
+            return line.GetSubstring(prefix).Trim('\'');
+        }
+
         public static bool ReadAndParseBool(this StreamReader reader, string prefix, bool ignoreFormatError = false)
         {
             var line = reader.ReadLine().Trim();
             return ignoreFormatError ? TryParseBool(line, prefix) : ParseBool(line, prefix);
+        }
+
+        public static float ReadAndParseFloat(this StreamReader reader, string prefix, bool ignoreFormatError = false)
+        {
+            var line = reader.ReadLine().Trim();
+            return ignoreFormatError ? TryParseFloat(line, prefix) : ParseFloat(line, prefix);
+        }
+
+        public static int ReadAndParseInt(this StreamReader reader, string prefix, bool ignoreFormatError = false)
+        {
+            var line = reader.ReadLine().Trim();
+            return ignoreFormatError ? TryParseInt(line, prefix) : ParseInt(line, prefix);
         }
 
         public static bool ParseBool(string line, string prefix)
@@ -20,18 +38,6 @@ namespace TPToolkitLib.Utils
                 throw new TPException($"'{valueString}' is not a valid bool in '{line}'.");
         }
 
-        public static bool TryParseBool(string line, string prefix)
-        {
-            bool.TryParse(line.GetSubstring(prefix), out var value);
-            return value;
-        }
-
-        public static float ReadAndParseFloat(this StreamReader reader, string prefix, bool ignoreFormatError = false)
-        {
-            var line = reader.ReadLine().Trim();
-            return ignoreFormatError ? TryParseFloat(line, prefix) : ParseFloat(line, prefix);
-        }
-
         public static float ParseFloat(string line, string prefix)
         {
             var valueString = line.GetSubstring(prefix);
@@ -41,9 +47,30 @@ namespace TPToolkitLib.Utils
                 throw new TPException($"'{valueString}' is not a valid float in '{line}'.");
         }
 
+        public static int ParseInt(string line, string prefix)
+        {
+            var valueString = line.GetSubstring(prefix);
+            if (int.TryParse(valueString, out var value))
+                return value;
+            else
+                throw new TPException($"'{valueString}' is not a valid int in '{line}'.");
+        }
+
+        public static bool TryParseBool(string line, string prefix)
+        {
+            bool.TryParse(line.GetSubstring(prefix), out var value);
+            return value;
+        }
+
         public static float TryParseFloat(string line, string prefix)
         {
             float.TryParse(line.GetSubstring(prefix), out var value);
+            return value;
+        }
+
+        public static int TryParseInt(string line, string prefix)
+        {
+            int.TryParse(line.GetSubstring(prefix), out var value);
             return value;
         }
 
