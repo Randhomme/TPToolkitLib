@@ -11,6 +11,7 @@ using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.Utils;
 using TPToolkitLib.WorldObject;
 using TPToolkitLib.WorldObject.Definitions.AiEntityFactories;
+using TPToolkitLib.WorldObject.Definitions.PhysicsFactories;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses.MeshAttributes;
@@ -21,10 +22,21 @@ namespace TPToolkitLib
     {
         private static readonly IList<IDependencyResolvable> dependencyResolvables = [];
 
+        #region Public methods
+
         public static WorldObjectType WorldObjectFromWot(string wotFilePath, bool ignoreFormatError)
         {
             return ReadWot(wotFilePath, ignoreFormatError);
         }
+
+        public static void WorldObjectToWot(string wotFilePath)
+        {
+
+        }
+
+        #endregion
+
+        #region Private methods
 
         private static WorldObjectType ReadWot(string wotFilePath, bool ignoreFormatError)
         {
@@ -130,71 +142,46 @@ namespace TPToolkitLib
 
                     ReadRenderEntityDefinition(wotReader, wot, factoryType, renderEntityDefinitionString, ignoreFormatError);
                 }
+
+                wotReader.ReadLine(); // Definition String 'PHYSICSDEFINITION'
+                line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
+                if (!string.IsNullOrEmpty(line))
+                {
+                    if (!string.Equals(line, physicsDefinitionString, StringComparison.Ordinal))
+                    {
+                        throw new TPException($"EntityType '{line}' for 'PHYSICSDEFINITION' is invalid. Make sure it matches the Type of the world object.");
+                    }
+
+                    // If not empty and valid, check the factory type
+                    var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
+
+                    ReadPhysicsDefinition(wotReader, wot, factoryType, physicsDefinitionString, ignoreFormatError);
+                }
             }
             return wot;
         }
+
+        #endregion
+
+        #region Definitions
 
         private static void ReadAiEntityDefinition(StreamReader wotReader, WorldObjectType wot, string factoryType, string aiEntityDefinitionString, bool ignoreFormatError)
         {
             wotReader.ReadLine(); // ContData
             wotReader.ReadLine(); // Start section
 
-            switch (factoryType)
+            wot.AiEntityDefinition = factoryType switch
             {
-                case "DragonAI":
-                    var dragonAI = new DragonAI(aiEntityDefinitionString)
-                    {
-                        DefaultSightRange = wotReader.ReadAndParseFloat("Default SightRange Float ", ignoreFormatError)
-                    };
-                    wot.AiEntityDefinition = dragonAI;
-                    break;
-                case "IslandAI":
-                    var islandAI = new IslandAI(aiEntityDefinitionString)
-                    {
-                        DefaultSightRange = wotReader.ReadAndParseFloat("Default SightRange Float ", ignoreFormatError)
-                    };
-                    wot.AiEntityDefinition = islandAI;
-                    break;
-                case "SpaceAnimalAI":
-                    var spaceAnimalAI = new SpaceAnimalAI(aiEntityDefinitionString);
-                    wot.AiEntityDefinition = spaceAnimalAI;
-                    break;
-                case "SpaceObjectAI":
-                    var spaceObjectAI = new SpaceObjectAI(aiEntityDefinitionString);
-                    wot.AiEntityDefinition = spaceObjectAI;
-                    break;
-                case "MineAI":
-                    var mineAI = new MineAI(aiEntityDefinitionString)
-                    {
-                        DefaultSightRange = wotReader.ReadAndParseFloat("Default SightRange Float ", ignoreFormatError)
-                    };
-                    wot.AiEntityDefinition = mineAI;
-                    break;
-                case "GunAI":
-                    var gunAI = new GunAI(aiEntityDefinitionString)
-                    {
-                        IsLobbingGun = wotReader.ReadAndParseBool("Is Lobbing Gun Bool ", ignoreFormatError),
-                        IsMineLayingGun = wotReader.ReadAndParseBool("Is MineLaying Gun Bool ", ignoreFormatError),
-                        IsTorpedoLauncherGun = wotReader.ReadAndParseBool("Is TorpedoLauncher Gun Bool ", ignoreFormatError),
-                        IsPointDefenseGun = wotReader.ReadAndParseBool("Is PointDefense Gun Bool ", ignoreFormatError)
-                    };
-                    wot.AiEntityDefinition = gunAI;
-                    break;
-                case "VolcanoAI":
-                    var volcanoAI = new VolcanoAI(aiEntityDefinitionString);
-                    wot.AiEntityDefinition = volcanoAI;
-                    break;
-                case "ShipAI":
-                    var shipAI = new ShipAI(aiEntityDefinitionString)
-                    {
-                        DefaultSightRange = wotReader.ReadAndParseFloat("Default SightRange Float ", ignoreFormatError)
-                    };
-                    wot.AiEntityDefinition = shipAI;
-                    break;
-                default:
-                    throw new TPException($"FactoryType '{factoryType}' for 'AIENTITYDEFINITION' is invalid.");
-            }
-
+                "DragonAI" => ReadDragonAI(wotReader, aiEntityDefinitionString, ignoreFormatError),
+                "IslandAI" => ReadIslandAI(wotReader, aiEntityDefinitionString, ignoreFormatError),
+                "SpaceAnimalAI" => ReadSpaceAnimalAI(aiEntityDefinitionString),
+                "SpaceObjectAI" => ReadSpaceObjectAI(aiEntityDefinitionString),
+                "MineAI" => ReadMineAI(wotReader, aiEntityDefinitionString, ignoreFormatError),
+                "GunAI" => ReadGunAI(wotReader, aiEntityDefinitionString, ignoreFormatError),
+                "VolcanoAI" => ReadVolcanoAI(aiEntityDefinitionString),
+                "ShipAI" => ReadShipAI(wotReader, aiEntityDefinitionString, ignoreFormatError),
+                _ => throw new TPException($"FactoryType '{factoryType}' for 'AIENTITYDEFINITION' is invalid."),
+            };
             wotReader.ReadLine(); // End section
         }
 
@@ -217,6 +204,103 @@ namespace TPToolkitLib
             wotReader.ReadLine(); // End section
         }
 
+        private static void ReadPhysicsDefinition(StreamReader wotReader, WorldObjectType wot, string factoryType, string physicsDefinitionString, bool ignoreFormatError)
+        {
+            wotReader.ReadLine(); // ContData
+            wotReader.ReadLine(); // Start section
+
+            switch (factoryType)
+            {
+                case "DragonPhysics":
+                    wot.PhysicsDefinition = ReadDragonPhysics(wotReader, physicsDefinitionString, ignoreFormatError);
+                    break;
+                case "Whale Physics":
+                    wot.PhysicsDefinition = ReadWhalePhysics(wotReader, physicsDefinitionString, ignoreFormatError);
+                    break;
+                case "SpaceObjectPhysics":
+                    wot.PhysicsDefinition = ReadSpaceObjectPhysics(wotReader, physicsDefinitionString, ignoreFormatError);
+                    break;
+                case "ProjectilePhysics":
+                    wot.PhysicsDefinition = ReadProjectilePhysics(wotReader, physicsDefinitionString, ignoreFormatError);
+                    break;
+                case "MinePhysics":
+                    wot.PhysicsDefinition = ReadMinePhysics(wotReader, physicsDefinitionString, ignoreFormatError);
+                    break;
+                case "TorpedoPhysics":
+                    wot.PhysicsDefinition = ReadTorpedoPhysics(wotReader, physicsDefinitionString, ignoreFormatError);
+                    break;
+                case "ShipDemo":
+                    wot.PhysicsDefinition = ReadShipDemo(wotReader, physicsDefinitionString, ignoreFormatError);
+                    break;
+                default:
+                    throw new TPException($"FactoryType '{factoryType}' for 'PHYSICSDEFINITION' is invalid.");
+            }
+
+            wotReader.ReadLine(); // End section
+        }
+
+        #endregion
+
+        #region Factories
+
+        private static DragonAI ReadDragonAI(StreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
+        {
+            return new DragonAI(aiEntityDefinitionString)
+            {
+                DefaultSightRange = wotReader.ReadAndParseFloat("Default SightRange Float ", ignoreFormatError)
+            };
+        }
+
+        private static IslandAI ReadIslandAI(StreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
+        {
+            return new IslandAI(aiEntityDefinitionString)
+            {
+                DefaultSightRange = wotReader.ReadAndParseFloat("Default SightRange Float ", ignoreFormatError)
+            };
+        }
+
+        private static SpaceAnimalAI ReadSpaceAnimalAI(string aiEntityDefinitionString)
+        {
+            return new SpaceAnimalAI(aiEntityDefinitionString);
+        }
+
+        private static SpaceObjectAI ReadSpaceObjectAI(string aiEntityDefinitionString)
+        {
+            return new SpaceObjectAI(aiEntityDefinitionString);
+        }
+
+        private static MineAI ReadMineAI(StreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
+        {
+            return new MineAI(aiEntityDefinitionString)
+            {
+                DefaultSightRange = wotReader.ReadAndParseFloat("Default SightRange Float ", ignoreFormatError)
+            };
+        }
+
+        private static GunAI ReadGunAI(StreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
+        {
+            return new GunAI(aiEntityDefinitionString)
+            {
+                IsLobbingGun = wotReader.ReadAndParseBool("Is Lobbing Gun Bool ", ignoreFormatError),
+                IsMineLayingGun = wotReader.ReadAndParseBool("Is MineLaying Gun Bool ", ignoreFormatError),
+                IsTorpedoLauncherGun = wotReader.ReadAndParseBool("Is TorpedoLauncher Gun Bool ", ignoreFormatError),
+                IsPointDefenseGun = wotReader.ReadAndParseBool("Is PointDefense Gun Bool ", ignoreFormatError)
+            };
+        }
+
+        private static VolcanoAI ReadVolcanoAI(string aiEntityDefinitionString)
+        {
+            return new VolcanoAI(aiEntityDefinitionString);
+        }
+
+        private static ShipAI ReadShipAI(StreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
+        {
+            return new ShipAI(aiEntityDefinitionString)
+            {
+                DefaultSightRange = wotReader.ReadAndParseFloat("Default SightRange Float ", ignoreFormatError)
+            };
+        }
+
         private static RenderEntityFactory ReadRenderEntityFactory(StreamReader wotReader, string renderEntityDefinitionString, bool ignoreFormatError)
         {
             var renderEntityFactory = new RenderEntityFactory(renderEntityDefinitionString)
@@ -233,6 +317,94 @@ namespace TPToolkitLib
 
             return renderEntityFactory;
         }
+
+        private static DragonPhysics ReadDragonPhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        {
+            return new DragonPhysics(physicsDefinitionString)
+            {
+                CenterOfMass = wotReader.ReadAndParseVector3("CenterOfMass Vector3", ignoreFormatError),
+                Mass = wotReader.ReadAndParseFloat("Mass Float ", ignoreFormatError),
+                MaxThrust = wotReader.ReadAndParseFloat("MaxThrust Float ", ignoreFormatError),
+                MaxSpeed = wotReader.ReadAndParseFloat("MaxSpeed Float ", ignoreFormatError),
+                RotationalFriction = wotReader.ReadAndParseFloat("RotationalFriction Float ", ignoreFormatError),
+                MaxAngularAcceleration = wotReader.ReadAndParseFloat("MaxAngularAcceleration Float ", ignoreFormatError),
+            };
+        }
+
+        private static SpaceObjectPhysics ReadSpaceObjectPhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        {
+            return new SpaceObjectPhysics(physicsDefinitionString)
+            {
+                CenterOfMass = wotReader.ReadAndParseVector3("CenterOfMass Vector3", ignoreFormatError),
+                Mass = wotReader.ReadAndParseFloat("Mass Float ", ignoreFormatError),
+                Acceleration = wotReader.ReadAndParseFloat("Acceleration Float ", ignoreFormatError),
+            };
+        }
+
+        private static WhalePhysics ReadWhalePhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        {
+            return new WhalePhysics(physicsDefinitionString)
+            {
+                CenterOfMass = wotReader.ReadAndParseVector3("CenterOfMass Vector3", ignoreFormatError),
+                Mass = wotReader.ReadAndParseFloat("Mass Float ", ignoreFormatError),
+                MaxThrust = wotReader.ReadAndParseFloat("MaxThrust Float ", ignoreFormatError),
+                MaxSpeed = wotReader.ReadAndParseFloat("MaxSpeed Float ", ignoreFormatError),
+                RotationalFriction = wotReader.ReadAndParseFloat("RotationalFriction Float ", ignoreFormatError),
+                MaxAngularAcceleration = wotReader.ReadAndParseFloat("MaxAngularAcceleration Float ", ignoreFormatError),
+                MaxDivePitch = wotReader.ReadAndParseFloat("Max Dive Pitch Float ", ignoreFormatError),
+                MaxClimbPitch = wotReader.ReadAndParseFloat("Max Climb Pitch Float ", ignoreFormatError),
+                DiveTime = wotReader.ReadAndParseFloat("Dive Time Float ", ignoreFormatError),
+            };
+        }
+
+        private static ProjectilePhysics ReadProjectilePhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        {
+            return new ProjectilePhysics(physicsDefinitionString)
+            {
+                CenterOfMass = wotReader.ReadAndParseVector3("CenterOfMass Vector3", ignoreFormatError),
+                Mass = wotReader.ReadAndParseFloat("Mass Float ", ignoreFormatError),
+            };
+        }
+
+        private static MinePhysics ReadMinePhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        {
+            return new MinePhysics(physicsDefinitionString)
+            {
+                CenterOfMass = wotReader.ReadAndParseVector3("CenterOfMass Vector3", ignoreFormatError),
+                Mass = wotReader.ReadAndParseFloat("Mass Float ", ignoreFormatError),
+                MaximumSpeed = wotReader.ReadAndParseFloat("Maximum speed Float ", ignoreFormatError),
+            };
+        }
+
+        private static TorpedoPhysics ReadTorpedoPhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        {
+            return new TorpedoPhysics(physicsDefinitionString)
+            {
+                CenterOfMass = wotReader.ReadAndParseVector3("CenterOfMass Vector3", ignoreFormatError),
+                Mass = wotReader.ReadAndParseFloat("Mass Float ", ignoreFormatError),
+                MaxThrust = wotReader.ReadAndParseFloat("MaxThrust Float ", ignoreFormatError),
+                MaxSpeed = wotReader.ReadAndParseFloat("MaxSpeed Float ", ignoreFormatError),
+                RotationalFriction = wotReader.ReadAndParseFloat("RotationalFriction Float ", ignoreFormatError),
+                MaxAngularAcceleration = wotReader.ReadAndParseFloat("MaxAngularAcceleration Float ", ignoreFormatError),
+            };
+        }
+
+        private static ShipDemo ReadShipDemo(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        {
+            return new ShipDemo(physicsDefinitionString)
+            {
+                CenterOfMass = wotReader.ReadAndParseVector3("CenterOfMass Vector3", ignoreFormatError),
+                Mass = wotReader.ReadAndParseFloat("Mass Float ", ignoreFormatError),
+                MaxThrust = wotReader.ReadAndParseFloat("MaxThrust Float ", ignoreFormatError),
+                MaxSpeed = wotReader.ReadAndParseFloat("MaxSpeed Float ", ignoreFormatError),
+                RotationalFriction = wotReader.ReadAndParseFloat("RotationalFriction Float ", ignoreFormatError),
+                MaxAngularAcceleration = wotReader.ReadAndParseFloat("MaxAngularAcceleration Float ", ignoreFormatError),
+            };
+        }
+
+        #endregion
+
+        #region RenderEntityFactory specifics
 
         private static void ReadMeshAttributeManager(StreamReader wotReader, IList<MeshAttribute> meshAttributes)
         {
@@ -669,5 +841,7 @@ namespace TPToolkitLib
             wotReader.ReadLine(); // Skip AssociationName String
             return fullyCloakedEffectPoint;
         }
+
+        #endregion
     }
 }
