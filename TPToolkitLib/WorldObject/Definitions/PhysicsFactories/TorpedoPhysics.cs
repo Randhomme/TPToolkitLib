@@ -1,0 +1,19 @@
+﻿using System.Numerics;
+
+namespace TPToolkitLib.WorldObject.Definitions.PhysicsFactories
+{
+
+    internal class TorpedoPhysics : PhysicsDefinition
+    {
+        public Vector3 CenterOfMass { get; set; }
+        public float Mass { get; set; }
+        public float MaxThrust { get; set; }
+        public float MaxSpeed { get; set; }
+        public float RotationalFriction { get; set; }
+        public float MaxAngularAcceleration { get; set; }
+        public TorpedoPhysics(string type) : base(type)
+        {
+            
+        }
+    }
+}
