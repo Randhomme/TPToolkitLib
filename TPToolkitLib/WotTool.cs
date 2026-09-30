@@ -11,6 +11,7 @@ using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.Utils;
 using TPToolkitLib.WorldObject;
 using TPToolkitLib.WorldObject.Definitions.AiEntityFactories;
+using TPToolkitLib.WorldObject.Definitions.CollisionFactories;
 using TPToolkitLib.WorldObject.Definitions.PhysicsFactories;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses;
@@ -157,6 +158,21 @@ namespace TPToolkitLib
 
                     ReadPhysicsDefinition(wotReader, wot, factoryType, physicsDefinitionString, ignoreFormatError);
                 }
+
+                wotReader.ReadLine(); // Definition String 'COLLISIONDEFINITION'
+                line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
+                if (!string.IsNullOrEmpty(line))
+                {
+                    if (!string.Equals(line, collisionDefinitionString, StringComparison.Ordinal))
+                    {
+                        throw new TPException($"EntityType '{line}' for 'COLLISIONDEFINITION' is invalid. Make sure it matches the Type of the world object.");
+                    }
+
+                    // If not empty and valid, check the factory type
+                    var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
+
+                    ReadCollisionDefinition(wotReader, wot, factoryType, collisionDefinitionString, ignoreFormatError);
+                }
             }
             return wot;
         }
@@ -209,33 +225,32 @@ namespace TPToolkitLib
             wotReader.ReadLine(); // ContData
             wotReader.ReadLine(); // Start section
 
-            switch (factoryType)
+            wot.PhysicsDefinition = factoryType switch
             {
-                case "DragonPhysics":
-                    wot.PhysicsDefinition = ReadDragonPhysics(wotReader, physicsDefinitionString, ignoreFormatError);
-                    break;
-                case "Whale Physics":
-                    wot.PhysicsDefinition = ReadWhalePhysics(wotReader, physicsDefinitionString, ignoreFormatError);
-                    break;
-                case "SpaceObjectPhysics":
-                    wot.PhysicsDefinition = ReadSpaceObjectPhysics(wotReader, physicsDefinitionString, ignoreFormatError);
-                    break;
-                case "ProjectilePhysics":
-                    wot.PhysicsDefinition = ReadProjectilePhysics(wotReader, physicsDefinitionString, ignoreFormatError);
-                    break;
-                case "MinePhysics":
-                    wot.PhysicsDefinition = ReadMinePhysics(wotReader, physicsDefinitionString, ignoreFormatError);
-                    break;
-                case "TorpedoPhysics":
-                    wot.PhysicsDefinition = ReadTorpedoPhysics(wotReader, physicsDefinitionString, ignoreFormatError);
-                    break;
-                case "ShipDemo":
-                    wot.PhysicsDefinition = ReadShipDemo(wotReader, physicsDefinitionString, ignoreFormatError);
-                    break;
-                default:
-                    throw new TPException($"FactoryType '{factoryType}' for 'PHYSICSDEFINITION' is invalid.");
-            }
+                "DragonPhysics" => ReadDragonPhysics(wotReader, physicsDefinitionString, ignoreFormatError),
+                "Whale Physics" => ReadWhalePhysics(wotReader, physicsDefinitionString, ignoreFormatError),
+                "SpaceObjectPhysics" => ReadSpaceObjectPhysics(wotReader, physicsDefinitionString, ignoreFormatError),
+                "ProjectilePhysics" => ReadProjectilePhysics(wotReader, physicsDefinitionString, ignoreFormatError),
+                "MinePhysics" => ReadMinePhysics(wotReader, physicsDefinitionString, ignoreFormatError),
+                "TorpedoPhysics" => ReadTorpedoPhysics(wotReader, physicsDefinitionString, ignoreFormatError),
+                "ShipDemo" => ReadShipDemo(wotReader, physicsDefinitionString, ignoreFormatError),
+                _ => throw new TPException($"FactoryType '{factoryType}' for 'PHYSICSDEFINITION' is invalid."),
+            };
+            wotReader.ReadLine(); // End section
+        }
 
+        private static void ReadCollisionDefinition(StreamReader wotReader, WorldObjectType wot, string factoryType, string collisionDefinitionString, bool ignoreFormatError)
+        {
+            wotReader.ReadLine(); // ContData
+            wotReader.ReadLine(); // Start section
+
+            wot.CollisionDefinition = factoryType switch
+            {
+                "BoundingRenderEntity" => ReadBoundingRenderEntity(wotReader, collisionDefinitionString, ignoreFormatError),
+                "Point" => ReadPoint(wotReader, collisionDefinitionString, ignoreFormatError),
+                "BoundingSphere" => ReadBoundingSphere(wotReader, collisionDefinitionString, ignoreFormatError),
+                _ => throw new TPException($"FactoryType '{factoryType}' for 'COLLISIONDEFINITION' is invalid."),
+            };
             wotReader.ReadLine(); // End section
         }
 
@@ -400,6 +415,72 @@ namespace TPToolkitLib
                 RotationalFriction = wotReader.ReadAndParseFloat("RotationalFriction Float ", ignoreFormatError),
                 MaxAngularAcceleration = wotReader.ReadAndParseFloat("MaxAngularAcceleration Float ", ignoreFormatError),
             };
+        }
+
+        private static BoundingRenderEntity ReadBoundingRenderEntity(StreamReader wotReader, string collisionDefinitionString, bool ignoreFormatError)
+        {
+            var boundingRenderEntity = new BoundingRenderEntity(collisionDefinitionString);
+            var detectionTypeString = wotReader.ReadString("DetectionType String ");
+            if (EnumExtensions.TryGetValueFromDisplayName<DetectionType>(detectionTypeString, out var detectionType))
+                boundingRenderEntity.DetectionType = detectionType;
+            else
+                throw new TPException($"The DetectionType value '{detectionTypeString}' in the COLLISIONDEFINITION factory '{collisionDefinitionString}' is invalid.");
+            var responseTypeString = wotReader.ReadString("ResponseType String ");
+            if (EnumExtensions.TryGetValueFromDisplayName<ResponseType>(responseTypeString, out var responseType))
+                boundingRenderEntity.ResponseType = responseType;
+            else
+                throw new TPException($"The ResponseType value '{responseTypeString}' in the COLLISIONDEFINITION factory '{collisionDefinitionString}' is invalid.");
+            boundingRenderEntity.UserDefinedSphereSize = wotReader.ReadAndParseBool("User defined sphere size Bool ", ignoreFormatError);
+            if (boundingRenderEntity.UserDefinedSphereSize)
+            {
+                boundingRenderEntity.LocalPosition = wotReader.ReadAndParseVector3("LocalPosition Vector3", ignoreFormatError);
+                boundingRenderEntity.Radius = wotReader.ReadAndParseFloat("Radius Float ", ignoreFormatError);
+            }
+            boundingRenderEntity.UserDefinedBoundingBoxExtents = wotReader.ReadAndParseBool("UserDefinedBoundingBoxExtents Bool ", ignoreFormatError);
+            if (boundingRenderEntity.UserDefinedBoundingBoxExtents)
+            {
+                boundingRenderEntity.MinExtents = wotReader.ReadAndParseVector3("MinExtents Vector3", ignoreFormatError);
+                boundingRenderEntity.MaxExtents = wotReader.ReadAndParseVector3("MaxExtents Vector3", ignoreFormatError);
+            }
+            return boundingRenderEntity;
+        }
+
+        private static Point ReadPoint(StreamReader wotReader, string collisionDefinitionString, bool ignoreFormatError)
+        {
+            var point = new Point(collisionDefinitionString);
+            var detectionTypeString = wotReader.ReadString("DetectionType String ");
+            if (EnumExtensions.TryGetValueFromDisplayName<DetectionType>(detectionTypeString, out var detectionType))
+                point.DetectionType = detectionType;
+            else
+                throw new TPException($"The DetectionType value '{detectionTypeString}' in the COLLISIONDEFINITION factory '{collisionDefinitionString}' is invalid.");
+            var responseTypeString = wotReader.ReadString("ResponseType String ");
+            if (EnumExtensions.TryGetValueFromDisplayName<ResponseType>(responseTypeString, out var responseType))
+                point.ResponseType = responseType;
+            else
+                throw new TPException($"The ResponseType value '{responseTypeString}' in the COLLISIONDEFINITION factory '{collisionDefinitionString}' is invalid.");
+            return point;
+        }
+
+        private static BoundingSphere ReadBoundingSphere(StreamReader wotReader, string collisionDefinitionString, bool ignoreFormatError)
+        {
+            var boundingSphere = new BoundingSphere(collisionDefinitionString);
+            var detectionTypeString = wotReader.ReadString("DetectionType String ");
+            if (EnumExtensions.TryGetValueFromDisplayName<DetectionType>(detectionTypeString, out var detectionType))
+                boundingSphere.DetectionType = detectionType;
+            else
+                throw new TPException($"The DetectionType value '{detectionTypeString}' in the COLLISIONDEFINITION factory '{collisionDefinitionString}' is invalid.");
+            var responseTypeString = wotReader.ReadString("ResponseType String ");
+            if (EnumExtensions.TryGetValueFromDisplayName<ResponseType>(responseTypeString, out var responseType))
+                boundingSphere.ResponseType = responseType;
+            else
+                throw new TPException($"The ResponseType value '{responseTypeString}' in the COLLISIONDEFINITION factory '{collisionDefinitionString}' is invalid.");
+            boundingSphere.UserDefinedSphereSize = wotReader.ReadAndParseBool("User defined sphere size Bool ", ignoreFormatError);
+            if (boundingSphere.UserDefinedSphereSize)
+            {
+                boundingSphere.LocalPosition = wotReader.ReadAndParseVector3("LocalPosition Vector3", ignoreFormatError);
+                boundingSphere.Radius = wotReader.ReadAndParseFloat("Radius Float ", ignoreFormatError);
+            }
+            return boundingSphere;
         }
 
         #endregion
