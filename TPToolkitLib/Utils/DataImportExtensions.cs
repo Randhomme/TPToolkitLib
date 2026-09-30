@@ -1,4 +1,6 @@
 ﻿using System.IO;
+using System.Numerics;
+using System.Runtime.Remoting.Messaging;
 using TPToolkitLib.Exceptions;
 
 namespace TPToolkitLib.Utils
@@ -29,6 +31,12 @@ namespace TPToolkitLib.Utils
             return ignoreFormatError ? TryParseInt(line, prefix) : ParseInt(line, prefix);
         }
 
+        public static Vector3 ReadAndParseVector3(this StreamReader reader, string prefix, bool ignoreFormatError = false)
+        {
+            var line = reader.ReadLine().Trim();
+            return ignoreFormatError ? TryParseVector3(line, prefix) : ParseVector3(line, prefix);
+        }
+
         public static bool ParseBool(string line, string prefix)
         {
             var valueString = line.GetSubstring(prefix);
@@ -56,6 +64,16 @@ namespace TPToolkitLib.Utils
                 throw new TPException($"'{valueString}' is not a valid int in '{line}'.");
         }
 
+        public static Vector3 ParseVector3(string line, string prefix)
+        {
+            var valueString = line.GetSubstring(prefix).Trim('(', ')');
+            var values = valueString.Split(',');
+            if (float.TryParse(values[0], out var x) && float.TryParse(values[1], out var y) && float.TryParse(values[2], out var z))
+                return new Vector3(x, y, z);
+            else
+                throw new TPException($"'{valueString}' is not a valid Vector3 in '{line}'.");
+        }
+
         public static bool TryParseBool(string line, string prefix)
         {
             bool.TryParse(line.GetSubstring(prefix), out var value);
@@ -72,6 +90,16 @@ namespace TPToolkitLib.Utils
         {
             int.TryParse(line.GetSubstring(prefix), out var value);
             return value;
+        }
+
+        public static Vector3 TryParseVector3(string line, string prefix)
+        {
+            var valueString = line.GetSubstring(prefix).Trim('(', ')');
+            var values = valueString.Split(',');
+            float.TryParse(values[0], out var x);
+            float.TryParse(values[1], out var y);
+            float.TryParse(values[2], out var z);
+            return new Vector3(x, y, z);
         }
 
         private static string GetSubstring(this string str, string val)
