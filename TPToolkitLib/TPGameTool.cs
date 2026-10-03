@@ -11,11 +11,16 @@ namespace TPToolkitLib
 {
     public static class TPGameTool
     {
-        public static IList<WorldObjectType> WorldObjects { get; } = [];
-        public static IList<MsbScene> MeshScenes { get; } = [];
-        public static IList<string> Effects { get; } = [];
-        public static IList<string> Meshes { get; } = [];
-        public static IList<string> RenderEffects { get; } = [];
+        private static readonly List<WorldObjectType> worldObjects = [];
+        private static readonly List<MsbScene> meshScenes = [];
+        private static readonly List<string> effects = [];
+        private static readonly List<string> meshes = [];
+        private static readonly List<string> renderEffects = [];
+        public static IReadOnlyList<WorldObjectType> WorldObjects { get => worldObjects; }
+        public static IReadOnlyList<MsbScene> MeshScenes { get => meshScenes; }
+        public static IReadOnlyList<string> Effects { get => effects; }
+        public static IReadOnlyList<string> Meshes { get => meshes; }
+        public static IReadOnlyList<string> RenderEffects { get => renderEffects; }
 
         public static void LoadTPGameFolder(string tpGameFolderpath)
         {
@@ -33,7 +38,7 @@ namespace TPToolkitLib
             for (int i = 0; i < msbFiles.Length; i++)
             {
                 var msbFile = msbFiles[i];
-                MeshScenes.Add(MsbTool.MeshSceneFromMsb(msbFile));
+                meshScenes.Add(MsbTool.MeshSceneFromMsb(msbFile));
             }
         }
 
@@ -43,7 +48,7 @@ namespace TPToolkitLib
             for (int i = 0; i < effectFiles.Length; i++)
             {
                 var effectFile = effectFiles[i];
-                Effects.Add(Path.GetFileNameWithoutExtension(effectFile));
+                effects.Add(Path.GetFileNameWithoutExtension(effectFile));
             }
         }
 
@@ -53,7 +58,7 @@ namespace TPToolkitLib
             for (int i = 0; i < meshFiles.Length; i++)
             {
                 var meshFile = meshFiles[i];
-                Meshes.Add(Path.GetFileNameWithoutExtension(meshFile));
+                meshes.Add(Path.GetFileNameWithoutExtension(meshFile));
             }
         }
 
@@ -63,7 +68,7 @@ namespace TPToolkitLib
             for (int i = 0; i < renderEffectFiles.Length; i++)
             {
                 var renderEffectFile = renderEffectFiles[i];
-                RenderEffects.Add(Path.GetFileNameWithoutExtension(renderEffectFile));
+                renderEffects.Add(Path.GetFileNameWithoutExtension(renderEffectFile));
             }
         }
     }
