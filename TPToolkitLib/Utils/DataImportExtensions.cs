@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Numerics;
 using System.Runtime.Remoting.Messaging;
+using TPToolkitLib.Enums;
 using TPToolkitLib.Exceptions;
 
 namespace TPToolkitLib.Utils
@@ -35,6 +37,12 @@ namespace TPToolkitLib.Utils
         {
             var line = reader.ReadLine().Trim();
             return ignoreFormatError ? TryParseVector3(line, prefix) : ParseVector3(line, prefix);
+        }
+
+        public static TEnum ReadAndParseEnum<TEnum>(this StreamReader reader, string prefix, bool ignoreFormatError = false) where TEnum : struct, Enum
+        {
+            var line = reader.ReadLine().Trim();
+            return ignoreFormatError ? TryParseEnum<TEnum>(line, prefix) : ParseEnum<TEnum>(line, prefix);
         }
 
         public static bool ParseBool(string line, string prefix)
@@ -74,6 +82,15 @@ namespace TPToolkitLib.Utils
                 throw new TPException($"'{valueString}' is not a valid Vector3 in '{line}'.");
         }
 
+        public static TEnum ParseEnum<TEnum>(string line, string prefix) where TEnum : struct, Enum
+        {
+            var valueString = line.GetSubstring(prefix).Trim('\'');
+            if (EnumExtensions.TryGetValueFromDisplayName<TEnum>(valueString, out var enumValue))
+                return enumValue;
+            else
+                throw new TPException($"'{valueString}' is not a valid {typeof(TEnum).Name} in '{line}'.");
+        }
+
         public static bool TryParseBool(string line, string prefix)
         {
             bool.TryParse(line.GetSubstring(prefix), out var value);
@@ -100,6 +117,13 @@ namespace TPToolkitLib.Utils
             float.TryParse(values[1], out var y);
             float.TryParse(values[2], out var z);
             return new Vector3(x, y, z);
+        }
+
+        public static TEnum TryParseEnum<TEnum>(string line, string prefix) where TEnum : struct, Enum
+        {
+            var valueString = line.GetSubstring(prefix).Trim('\'');
+            EnumExtensions.TryGetValueFromDisplayName<TEnum>(valueString, out var enumValue);
+            return enumValue;
         }
 
         private static string GetSubstring(this string str, string val)
