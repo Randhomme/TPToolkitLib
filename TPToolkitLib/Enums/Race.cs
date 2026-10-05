@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TPToolkitLib.Enums
+﻿namespace TPToolkitLib.Enums
 {
     public enum Race
     {
+        None = -1,
         Navy,
         Civilian,
         Pirate,
-        Procyon
+        Procyon,
     }
 }

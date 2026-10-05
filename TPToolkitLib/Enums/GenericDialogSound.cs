@@ -7,7 +7,9 @@
         SPOTTER_NEBULA,
         SPOTTER_WHALES,
         SPOTTER_DRAGONS,
+        GUNNER_FIRE_TORPEDO,
         GUNNER_FIRE_MORTAR,
         GUNNER_FIRE,
+        INVALID,
     }
 }
