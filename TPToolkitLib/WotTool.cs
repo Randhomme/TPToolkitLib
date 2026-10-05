@@ -13,6 +13,7 @@ using TPToolkitLib.WorldObject;
 using TPToolkitLib.WorldObject.Definitions.AiEntityFactories;
 using TPToolkitLib.WorldObject.Definitions.CollisionFactories;
 using TPToolkitLib.WorldObject.Definitions.CustomInfoFactories;
+using TPToolkitLib.WorldObject.Definitions.CustomInfoFactories.Classes;
 using TPToolkitLib.WorldObject.Definitions.PhysicsFactories;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses;
@@ -314,6 +315,27 @@ namespace TPToolkitLib
                     break;
                 case "TorpedoCustomInfoFactory":
                     wot.CustomInfoDefinition = ReadTorpedoCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
+                    break;
+                case "CrewCustomInfoFactory":
+                    wot.CustomInfoDefinition = ReadCrewCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
+                    break;
+                case "GunCustomInfoFactory":
+                    wot.CustomInfoDefinition = ReadGunCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
+                    break;
+                case "ShipCustomInfoFactory":
+                    wot.CustomInfoDefinition = ReadShipCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
+                    break;
+                case "ShipDebrisCustomInfoFactory":
+                    wot.CustomInfoDefinition = ReadShipDebrisCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
+                    break;
+                case "BlackHoleCustomInfoFactory":
+                    wot.CustomInfoDefinition = ReadBlackHoleCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
+                    break;
+                case "EtheriumCurrentCustomInfoFactory":
+                    wot.CustomInfoDefinition = ReadEtheriumCurrentCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
+                    break;
+                case "NebulaCustomInfoFactory":
+                    wot.CustomInfoDefinition = ReadNebulaCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
                     break;
                 default:
                     throw new TPException($"FactoryType '{factoryType}' for 'CUSTOMINFODEFINITION' is invalid.");
@@ -729,6 +751,180 @@ namespace TPToolkitLib
             return ReadBulletCustomInfoFactory<TorpedoCustomInfoFactory>(wotReader, customInfoDefinitionString, ignoreFormatError);
         }
 
+        private static CrewCustomInfoFactory ReadCrewCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        {
+            return new CrewCustomInfoFactory(customInfoDefinitionString)
+            {
+                CrewRace = wotReader.ReadAndParseEnum<Race>("Crew Race String ", ignoreFormatError),
+                PointValue = wotReader.ReadAndParseInt("Point Value Int ", ignoreFormatError),
+                CrewNameStringID = wotReader.ReadString("Crew Name String ID String "),
+                LeadershipSkillActive = wotReader.ReadAndParseBool("Leadership Skill Active Bool ", ignoreFormatError),
+                LeadershipSkillAbilityValue = wotReader.ReadAndParseInt("Leadership Skill Ability Value Int ", ignoreFormatError),
+                NavigationSkillActive = wotReader.ReadAndParseBool("Navigation Skill Active Bool ", ignoreFormatError),
+                NavigationSkillAbilityValue = wotReader.ReadAndParseInt("Navigation Skill Ability Value Int ", ignoreFormatError),
+                SpottingSkillActive = wotReader.ReadAndParseBool("Spotting Skill Active Bool ", ignoreFormatError),
+                SpottingSkillAbilityValue = wotReader.ReadAndParseInt("Spotting Skill Ability Value Int ", ignoreFormatError),
+                EngineeringSkillActive = wotReader.ReadAndParseBool("Engineering Skill Active Bool ", ignoreFormatError),
+                EngineeringSkillAbilityValue = wotReader.ReadAndParseInt("Engineering Skill Ability Value Int ", ignoreFormatError),
+                RiggingSkillActive = wotReader.ReadAndParseBool("Rigging Skill Active Bool ", ignoreFormatError),
+                RiggingSkillAbilityValue = wotReader.ReadAndParseInt("Rigging Skill Ability Value Int ", ignoreFormatError),
+                CombatSkillActive = wotReader.ReadAndParseBool("Combat Skill Active Bool ", ignoreFormatError),
+                CombatSkillAbilityValue = wotReader.ReadAndParseInt("Combat Skill Ability Value Int ", ignoreFormatError),
+                GunnerySkillActive = wotReader.ReadAndParseBool("Gunnery Skill Active Bool ", ignoreFormatError),
+                GunnerySkillAbilityValue = wotReader.ReadAndParseInt("Gunnery Skill Ability Value Int ", ignoreFormatError),
+                TalkingHeadTexture = wotReader.ReadString("Talking Head Texture String "),
+                Species = wotReader.ReadAndParseEnum<Species>("Species String ", ignoreFormatError),
+            };
+        }
+
+        private static GunCustomInfoFactory ReadGunCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        {
+            return new GunCustomInfoFactory(customInfoDefinitionString)
+            {
+                BulletTypeName_PrimaryString = wotReader.ReadString("BulletTypeName_Primary String "),
+                BulletTypeName_SecondaryString = wotReader.ReadString("BulletTypeName_Secondary String "),
+                SoundName = wotReader.ReadString("SoundName String "),
+                MuzzleFlashEffect = wotReader.ReadString("MuzzleFlashEffect String "),
+                MuzzleSpeed = wotReader.ReadAndParseFloat("MuzzleSpeed Float ", ignoreFormatError),
+                DuringBurstReloadTime = wotReader.ReadAndParseFloat("DuringBurstReloadTime Float ", ignoreFormatError),
+                BulletsPerBurst = wotReader.ReadAndParseInt("BulletsPerBurst Int ", ignoreFormatError),
+                TimeBetweenBursts = wotReader.ReadAndParseFloat("TimeBetweenBursts Float ", ignoreFormatError),
+                CalculateAccuracyDeviationDuringBurst = wotReader.ReadAndParseBool("CalculateAccuracyDeviationDuringBurst Bool ", ignoreFormatError),
+                WeaponBarIconTexture = wotReader.ReadString("WeaponBar Icon Texture String "),
+                VerticalRotationSpeed = wotReader.ReadAndParseFloat("VerticalRotationSpeed Float ", ignoreFormatError),
+                HorizontalRotationSpeed = wotReader.ReadAndParseFloat("HorizontalRotationSpeed Float ", ignoreFormatError),
+                VerticalMinAngle = wotReader.ReadAndParseFloat("VerticalMinAngle Float ", ignoreFormatError),
+                VerticalMaxAngle = wotReader.ReadAndParseFloat("VerticalMaxAngle Float ", ignoreFormatError),
+                LobAngle = wotReader.ReadAndParseFloat("LobAngle Float ", ignoreFormatError),
+                MaximumRange_Range = wotReader.ReadAndParseFloat("MaximumRange_Range Float ", ignoreFormatError),
+                LongRange_Range = wotReader.ReadAndParseFloat("LongRange_Range Float ", ignoreFormatError),
+                EffectiveRange_Range = wotReader.ReadAndParseFloat("EffectiveRange_Range Float ", ignoreFormatError),
+                BulletAffectedByGravity = wotReader.ReadAndParseBool("BulletAffectedByGravity Bool ", ignoreFormatError),
+                MaximumRange_AccuracyDeviation = wotReader.ReadAndParseFloat("MaximumRange_AccuracyDeviation Float ", ignoreFormatError),
+                LongRange_AccuracyDeviation = wotReader.ReadAndParseFloat("LongRange_AccuracyDeviation Float ", ignoreFormatError),
+                EffectiveRange_AccuracyDeviation = wotReader.ReadAndParseFloat("EffectiveRange_AccuracyDeviation Float ", ignoreFormatError),
+                MaximumRange_RicochetFactor = wotReader.ReadAndParseFloat("MaximumRange_RicochetFactor Float ", ignoreFormatError),
+                LongRange_RicochetFactor = wotReader.ReadAndParseFloat("LongRange_RicochetFactor Float ", ignoreFormatError),
+                EffectiveRange_RicochetFactor = wotReader.ReadAndParseFloat("EffectiveRange_RicochetFactor Float ", ignoreFormatError),
+                VictoryPointCost = wotReader.ReadAndParseInt("Victory Point Cost Int ", ignoreFormatError),
+                GunNameStringID = wotReader.ReadString("Gun Name String ID String "),
+                MountType = wotReader.ReadAndParseEnum<MountType>("Mount Type String ", ignoreFormatError),
+                ExclusionRace = wotReader.ReadAndParseEnum<Race>("Exclusion Race String ", ignoreFormatError),
+                CanBeFiredWhileCloaked = wotReader.ReadAndParseBool("Can Be Fired While Cloaked Bool ", ignoreFormatError),
+                FiringCrewAlert = wotReader.ReadAndParseEnum<GenericDialogSound>("Firing Crew Alert String ", ignoreFormatError),
+                SoundMaxDistance = wotReader.ReadAndParseFloat("SoundMaxDistance Float ", ignoreFormatError),
+                SoundVolume = wotReader.ReadAndParseFloat("SoundVolume Float ", ignoreFormatError),
+            };
+        }
+
+        private static ShipCustomInfoFactory ReadShipCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        {
+            wotReader.ReadLine(); // 00000003 GUIInfo Chunk
+            wotReader.ReadLine(); // Start section
+            var shipCustomInfoFactory = new ShipCustomInfoFactory(customInfoDefinitionString)
+            {
+                ShipBarIconTexture = wotReader.ReadString("ShipBar Icon Texture String "),
+                SelectedIndicatorPercentageOfRadius = wotReader.ReadAndParseFloat("Selected Indicator Percentage Of Radius Float ", ignoreFormatError),
+                DistanceToStartSpherePicking = wotReader.ReadAndParseFloat("Distance to Start Sphere Picking Float ", ignoreFormatError),
+            };
+            wotReader.ReadLine(); // End section
+            shipCustomInfoFactory.DisplayableShipnameStringID = wotReader.ReadString("Displayable Shipname String ID String ");
+            shipCustomInfoFactory.ShipRace = wotReader.ReadAndParseEnum<Race>("Ship Race String ", ignoreFormatError);
+            shipCustomInfoFactory.IsTender = wotReader.ReadAndParseBool("Is Tender Bool ", ignoreFormatError);
+            shipCustomInfoFactory.NumberOfLifeboats = wotReader.ReadAndParseInt("Number of lifeboats Int ", ignoreFormatError);
+            shipCustomInfoFactory.IsLifeboat = wotReader.ReadAndParseBool("Is Lifeboat Bool ", ignoreFormatError);
+            shipCustomInfoFactory.IsCloakable = wotReader.ReadAndParseBool("Is Cloakable Bool ", ignoreFormatError);
+            shipCustomInfoFactory.ShipSize = wotReader.ReadAndParseInt("Ship Size Int ", ignoreFormatError);
+            shipCustomInfoFactory.CoreDamageSectionMaxHitPoints = wotReader.ReadAndParseInt("Core Damage Section Max HitPoints Int ", ignoreFormatError);
+            shipCustomInfoFactory.ExplosionEffectName = wotReader.ReadString("Explosion Effect Name String ");
+            shipCustomInfoFactory.EngineType = wotReader.ReadAndParseEnum<EngineType>("EngineType String ", ignoreFormatError);
+            shipCustomInfoFactory.EngineSoundNameEmergency = wotReader.ReadString("EngineSoundName Emergency String ");
+            shipCustomInfoFactory.EngineSoundNameFull = wotReader.ReadString("EngineSoundName Full String ");
+            shipCustomInfoFactory.EngineSoundNameHalf = wotReader.ReadString("EngineSoundName Half String ");
+            shipCustomInfoFactory.VictoryPointCost = wotReader.ReadAndParseInt("Victory Point Cost Int ", ignoreFormatError);
+            shipCustomInfoFactory.IsAvailableInMultiplayer = wotReader.ReadAndParseBool("Available in Multiplayer? Bool ", ignoreFormatError);
+            shipCustomInfoFactory.AvailableUniqueShipNameID00 = wotReader.ReadString("Available Unique Ship Name ID 00 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID01 = wotReader.ReadString("Available Unique Ship Name ID 01 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID02 = wotReader.ReadString("Available Unique Ship Name ID 02 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID03 = wotReader.ReadString("Available Unique Ship Name ID 03 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID04 = wotReader.ReadString("Available Unique Ship Name ID 04 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID05 = wotReader.ReadString("Available Unique Ship Name ID 05 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID06 = wotReader.ReadString("Available Unique Ship Name ID 06 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID07 = wotReader.ReadString("Available Unique Ship Name ID 07 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID08 = wotReader.ReadString("Available Unique Ship Name ID 08 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID09 = wotReader.ReadString("Available Unique Ship Name ID 09 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID10 = wotReader.ReadString("Available Unique Ship Name ID 10 String ");
+            shipCustomInfoFactory.AvailableUniqueShipNameID11 = wotReader.ReadString("Available Unique Ship Name ID 11 String ");
+            shipCustomInfoFactory.MaxNumberOfGunners = wotReader.ReadAndParseInt("Max number of Gunners Int ", ignoreFormatError);
+            shipCustomInfoFactory.MaxNumberOfCaptains = wotReader.ReadAndParseInt("Max number of Captains Int ", ignoreFormatError);
+            shipCustomInfoFactory.MaxNumberOfFirstMates = wotReader.ReadAndParseInt("Max number of First Mates Int ", ignoreFormatError);
+            shipCustomInfoFactory.MaxNumberOfNavigators = wotReader.ReadAndParseInt("Max number of Navigators Int ", ignoreFormatError);
+            shipCustomInfoFactory.MaxNumberOfEngineers = wotReader.ReadAndParseInt("Max number of Engineers Int ", ignoreFormatError);
+            shipCustomInfoFactory.MaxNumberOfRiggers = wotReader.ReadAndParseInt("Max number of Riggers Int ", ignoreFormatError);
+            shipCustomInfoFactory.MaxNumberOfFighters = wotReader.ReadAndParseInt("Max number of Fighters Int ", ignoreFormatError);
+            shipCustomInfoFactory.MaxNumberOfLookouts = wotReader.ReadAndParseInt("Max number of Lookouts Int ", ignoreFormatError);
+            shipCustomInfoFactory.RepairEffectName = wotReader.ReadString("Repair Effect Name String ");
+            return shipCustomInfoFactory;
+        }
+
+        private static ShipDebrisCustomInfoFactory ReadShipDebrisCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        {
+            return new ShipDebrisCustomInfoFactory(customInfoDefinitionString)
+            {
+                LifeTimeMin = wotReader.ReadAndParseFloat("LifeTimeMin Float ", ignoreFormatError),
+                LifeTimeMax = wotReader.ReadAndParseFloat("LifeTimeMax Float ", ignoreFormatError),
+            };
+        }
+
+        private static BlackHoleCustomInfoFactory ReadBlackHoleCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        {
+            return new BlackHoleCustomInfoFactory(customInfoDefinitionString)
+            {
+                Magnitude = wotReader.ReadAndParseFloat("Magnitude Float ", ignoreFormatError),
+                Radius = wotReader.ReadAndParseFloat("Radius Float ", ignoreFormatError),
+                VortexEffectName = wotReader.ReadString("VortexEffectName String "),
+                AmbientSoundMaxDistance = wotReader.ReadAndParseFloat("AmbientSoundMaxDistance Float ", ignoreFormatError),
+                AmbientSoundName = wotReader.ReadString("AmbientSoundName String "),
+            };
+        }
+
+        private static EtheriumCurrentCustomInfoFactory ReadEtheriumCurrentCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        {
+            return new EtheriumCurrentCustomInfoFactory(customInfoDefinitionString)
+            {
+                Magnitude = wotReader.ReadAndParseFloat("Magnitude Float ", ignoreFormatError),
+                Radius = wotReader.ReadAndParseFloat("Radius Float ", ignoreFormatError),
+            };
+        }
+
+        private static NebulaCustomInfoFactory ReadNebulaCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        {
+            var nebulaCustomInfoFactory = new NebulaCustomInfoFactory(customInfoDefinitionString)
+            {
+                MinimumLightningSpawnDistanceFromShips = wotReader.ReadAndParseFloat("Minimum Lightning Spawn Distance From Ships Float ", ignoreFormatError),
+                MinimumLightningBoltLength = wotReader.ReadAndParseFloat("Minimum Lightning Bolt Length Float ", ignoreFormatError),
+                MaximumLightningSpawnPointZAmplitude = wotReader.ReadAndParseFloat("Maximum Lightning Spawn Point Z Amplitude Float ", ignoreFormatError),
+                MeteorHitChanceModifier = wotReader.ReadAndParseFloat("Meteor Hit Chance Modifier Float ", ignoreFormatError),
+            };
+            wotReader.ReadLine(); // 00000048 Lightning Damage Potential
+            wotReader.ReadLine(); // Start section
+            ReadDamagePotential(wotReader, nebulaCustomInfoFactory.LightningDamagePotential, ignoreFormatError);
+            wotReader.ReadLine(); // End section
+            wotReader.ReadLine(); // 00000048 Wind Damage Potential
+            wotReader.ReadLine(); // Start section
+            ReadDamagePotential(wotReader, nebulaCustomInfoFactory.WindDamagePotential, ignoreFormatError);
+            wotReader.ReadLine(); // End section
+            wotReader.ReadLine(); // 00000048 Metor Damage Potential
+            wotReader.ReadLine(); // Start section
+            ReadDamagePotential(wotReader, nebulaCustomInfoFactory.MeteorDamagePotential, ignoreFormatError);
+            wotReader.ReadLine(); // End section
+            nebulaCustomInfoFactory.NebulaSoundName = wotReader.ReadString("NebulaSoundName String ");
+            nebulaCustomInfoFactory.SolarStormSoundName = wotReader.ReadString("SolarStormSoundName String ");
+            nebulaCustomInfoFactory.MeteorShowerSoundName = wotReader.ReadString("MeteorShowerSoundName String ");
+
+            return nebulaCustomInfoFactory;
+        }
+
         private static T ReadBulletCustomInfoFactory<T>(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError, bool hasLifetime = true) where T : BulletCustomInfoFactory
         {
             var bulletCustomInfoFactory = (T)Activator.CreateInstance(typeof(T), customInfoDefinitionString);
@@ -740,54 +936,8 @@ namespace TPToolkitLib
                 bulletCustomInfoFactory.DecalDamageSize = decalDamageSize;
             else
                 throw new TPException($"The Decal Damage Size value '{decalDamageSizeString}' in the CUSTOMINFODEFINITION factory '{customInfoDefinitionString}' is invalid.");
-            wotReader.ReadLine(); // #
-            wotReader.ReadLine(); // # Hull Wood DamagePotential
-            wotReader.ReadLine(); // #
-            bulletCustomInfoFactory.ChanceOfCriticalDamageWood = wotReader.ReadAndParseFloat("Chance of Critical Damage: Wood Float ", ignoreFormatError);
-            bulletCustomInfoFactory.ChanceOfFireWood = wotReader.ReadAndParseFloat("Chance of Fire: Wood Float ", ignoreFormatError);
-            bulletCustomInfoFactory.InitialFireStrengthWood = wotReader.ReadAndParseFloat("Initial Fire Strength: Wood Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageLowerBoundWood = wotReader.ReadAndParseFloat("Damage Lower Bound: Wood Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageUpperBoundWood = wotReader.ReadAndParseFloat("Damage Upper Bound: Wood Float ", ignoreFormatError);
-            wotReader.ReadLine(); // #
-            wotReader.ReadLine(); // # Hull ReInforced Wood DamagePotential
-            wotReader.ReadLine(); // #
-            bulletCustomInfoFactory.ChanceOfCriticalDamageReinforced = wotReader.ReadAndParseFloat("Chance of Critical Damage: Reinforced Float ", ignoreFormatError);
-            bulletCustomInfoFactory.ChanceOfFireReinforced = wotReader.ReadAndParseFloat("Chance of Fire: Reinforced Float ", ignoreFormatError);
-            bulletCustomInfoFactory.InitialFireStrengthReinforced = wotReader.ReadAndParseFloat("Initial Fire Strength: Reinforced Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageLowerBoundReinforced = wotReader.ReadAndParseFloat("Damage Lower Bound: Reinforced Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageUpperBoundReinforced = wotReader.ReadAndParseFloat("Damage Upper Bound: Reinforced Float ", ignoreFormatError);
-            wotReader.ReadLine(); // #
-            wotReader.ReadLine(); // # Hull Iron DamagePotential
-            wotReader.ReadLine(); // #
-            bulletCustomInfoFactory.ChanceOfCriticalDamageIron = wotReader.ReadAndParseFloat("Chance of Critical Damage: Iron Float ", ignoreFormatError);
-            bulletCustomInfoFactory.ChanceOfFireIron = wotReader.ReadAndParseFloat("Chance of Fire: Iron Float ", ignoreFormatError);
-            bulletCustomInfoFactory.InitialFireStrengthIron = wotReader.ReadAndParseFloat("Initial Fire Strength: Iron Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageLowerBoundIron = wotReader.ReadAndParseFloat("Damage Lower Bound: Iron Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageUpperBoundIron = wotReader.ReadAndParseFloat("Damage Upper Bound: Iron Float ", ignoreFormatError);
-            wotReader.ReadLine(); // #
-            wotReader.ReadLine(); // # Sail Cloth DamagePotential
-            wotReader.ReadLine(); // #
-            bulletCustomInfoFactory.ChanceOfCriticalDamageCloth = wotReader.ReadAndParseFloat("Chance of Critical Damage: Cloth Float ", ignoreFormatError);
-            bulletCustomInfoFactory.ChanceOfFireCloth = wotReader.ReadAndParseFloat("Chance of Fire: Cloth Float ", ignoreFormatError);
-            bulletCustomInfoFactory.InitialFireStrengthCloth = wotReader.ReadAndParseFloat("Initial Fire Strength: Cloth Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageLowerBoundCloth = wotReader.ReadAndParseFloat("Damage Lower Bound: Cloth Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageUpperBoundCloth = wotReader.ReadAndParseFloat("Damage Upper Bound: Cloth Float ", ignoreFormatError);
-            wotReader.ReadLine(); // #
-            wotReader.ReadLine(); // # Wall Stone DamagePotential
-            wotReader.ReadLine(); // #
-            bulletCustomInfoFactory.ChanceOfCriticalDamageStone = wotReader.ReadAndParseFloat("Chance of Critical Damage: Stone Float ", ignoreFormatError);
-            bulletCustomInfoFactory.ChanceOfFireStone = wotReader.ReadAndParseFloat("Chance of Fire: Stone Float ", ignoreFormatError);
-            bulletCustomInfoFactory.InitialFireStrengthStone = wotReader.ReadAndParseFloat("Initial Fire Strength: Stone Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageLowerBoundStone = wotReader.ReadAndParseFloat("Damage Lower Bound: Stone Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageUpperBoundStone = wotReader.ReadAndParseFloat("Damage Upper Bound: Stone Float ", ignoreFormatError);
-            wotReader.ReadLine(); // #
-            wotReader.ReadLine(); // # Dragon Scale DamagePotential
-            wotReader.ReadLine(); // #
-            bulletCustomInfoFactory.ChanceOfCriticalDamageDragon = wotReader.ReadAndParseFloat("Chance of Critical Damage: Dragon Float ", ignoreFormatError);
-            bulletCustomInfoFactory.ChanceOfFireDragon = wotReader.ReadAndParseFloat("Chance of Fire: Dragon Float ", ignoreFormatError);
-            bulletCustomInfoFactory.InitialFireStrengthDragon = wotReader.ReadAndParseFloat("Initial Fire Strength: Dragon Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageLowerBoundDragon = wotReader.ReadAndParseFloat("Damage Lower Bound: Dragon Float ", ignoreFormatError);
-            bulletCustomInfoFactory.DamageUpperBoundDragon = wotReader.ReadAndParseFloat("Damage Upper Bound: Dragon Float ", ignoreFormatError);
+
+            ReadDamagePotential(wotReader, bulletCustomInfoFactory.DamagePotential, ignoreFormatError);
 
             bulletCustomInfoFactory.ImpactSoundMaxDistance = wotReader.ReadAndParseFloat("Impact Sound Max Distance Float ", ignoreFormatError);
             bulletCustomInfoFactory.ImpactSoundVolume = wotReader.ReadAndParseFloat("Impact Sound Volume Float ", ignoreFormatError);
@@ -859,6 +1009,58 @@ namespace TPToolkitLib
                 bulletCustomInfoFactory.Lifetime = wotReader.ReadAndParseFloat("Lifetime Float ", ignoreFormatError);
 
             return bulletCustomInfoFactory;
+        }
+
+        private static void ReadDamagePotential(StreamReader wotReader, DamagePotential damagePotential, bool ignoreFormatError)
+        {
+            wotReader.ReadLine(); // #
+            wotReader.ReadLine(); // # Hull Wood DamagePotential
+            wotReader.ReadLine(); // #
+            damagePotential.ChanceOfCriticalDamageWood = wotReader.ReadAndParseFloat("Chance of Critical Damage: Wood Float ", ignoreFormatError);
+            damagePotential.ChanceOfFireWood = wotReader.ReadAndParseFloat("Chance of Fire: Wood Float ", ignoreFormatError);
+            damagePotential.InitialFireStrengthWood = wotReader.ReadAndParseFloat("Initial Fire Strength: Wood Float ", ignoreFormatError);
+            damagePotential.DamageLowerBoundWood = wotReader.ReadAndParseFloat("Damage Lower Bound: Wood Float ", ignoreFormatError);
+            damagePotential.DamageUpperBoundWood = wotReader.ReadAndParseFloat("Damage Upper Bound: Wood Float ", ignoreFormatError);
+            wotReader.ReadLine(); // #
+            wotReader.ReadLine(); // # Hull ReInforced Wood DamagePotential
+            wotReader.ReadLine(); // #
+            damagePotential.ChanceOfCriticalDamageReinforced = wotReader.ReadAndParseFloat("Chance of Critical Damage: Reinforced Float ", ignoreFormatError);
+            damagePotential.ChanceOfFireReinforced = wotReader.ReadAndParseFloat("Chance of Fire: Reinforced Float ", ignoreFormatError);
+            damagePotential.InitialFireStrengthReinforced = wotReader.ReadAndParseFloat("Initial Fire Strength: Reinforced Float ", ignoreFormatError);
+            damagePotential.DamageLowerBoundReinforced = wotReader.ReadAndParseFloat("Damage Lower Bound: Reinforced Float ", ignoreFormatError);
+            damagePotential.DamageUpperBoundReinforced = wotReader.ReadAndParseFloat("Damage Upper Bound: Reinforced Float ", ignoreFormatError);
+            wotReader.ReadLine(); // #
+            wotReader.ReadLine(); // # Hull Iron DamagePotential
+            wotReader.ReadLine(); // #
+            damagePotential.ChanceOfCriticalDamageIron = wotReader.ReadAndParseFloat("Chance of Critical Damage: Iron Float ", ignoreFormatError);
+            damagePotential.ChanceOfFireIron = wotReader.ReadAndParseFloat("Chance of Fire: Iron Float ", ignoreFormatError);
+            damagePotential.InitialFireStrengthIron = wotReader.ReadAndParseFloat("Initial Fire Strength: Iron Float ", ignoreFormatError);
+            damagePotential.DamageLowerBoundIron = wotReader.ReadAndParseFloat("Damage Lower Bound: Iron Float ", ignoreFormatError);
+            damagePotential.DamageUpperBoundIron = wotReader.ReadAndParseFloat("Damage Upper Bound: Iron Float ", ignoreFormatError);
+            wotReader.ReadLine(); // #
+            wotReader.ReadLine(); // # Sail Cloth DamagePotential
+            wotReader.ReadLine(); // #
+            damagePotential.ChanceOfCriticalDamageCloth = wotReader.ReadAndParseFloat("Chance of Critical Damage: Cloth Float ", ignoreFormatError);
+            damagePotential.ChanceOfFireCloth = wotReader.ReadAndParseFloat("Chance of Fire: Cloth Float ", ignoreFormatError);
+            damagePotential.InitialFireStrengthCloth = wotReader.ReadAndParseFloat("Initial Fire Strength: Cloth Float ", ignoreFormatError);
+            damagePotential.DamageLowerBoundCloth = wotReader.ReadAndParseFloat("Damage Lower Bound: Cloth Float ", ignoreFormatError);
+            damagePotential.DamageUpperBoundCloth = wotReader.ReadAndParseFloat("Damage Upper Bound: Cloth Float ", ignoreFormatError);
+            wotReader.ReadLine(); // #
+            wotReader.ReadLine(); // # Wall Stone DamagePotential
+            wotReader.ReadLine(); // #
+            damagePotential.ChanceOfCriticalDamageStone = wotReader.ReadAndParseFloat("Chance of Critical Damage: Stone Float ", ignoreFormatError);
+            damagePotential.ChanceOfFireStone = wotReader.ReadAndParseFloat("Chance of Fire: Stone Float ", ignoreFormatError);
+            damagePotential.InitialFireStrengthStone = wotReader.ReadAndParseFloat("Initial Fire Strength: Stone Float ", ignoreFormatError);
+            damagePotential.DamageLowerBoundStone = wotReader.ReadAndParseFloat("Damage Lower Bound: Stone Float ", ignoreFormatError);
+            damagePotential.DamageUpperBoundStone = wotReader.ReadAndParseFloat("Damage Upper Bound: Stone Float ", ignoreFormatError);
+            wotReader.ReadLine(); // #
+            wotReader.ReadLine(); // # Dragon Scale DamagePotential
+            wotReader.ReadLine(); // #
+            damagePotential.ChanceOfCriticalDamageDragon = wotReader.ReadAndParseFloat("Chance of Critical Damage: Dragon Float ", ignoreFormatError);
+            damagePotential.ChanceOfFireDragon = wotReader.ReadAndParseFloat("Chance of Fire: Dragon Float ", ignoreFormatError);
+            damagePotential.InitialFireStrengthDragon = wotReader.ReadAndParseFloat("Initial Fire Strength: Dragon Float ", ignoreFormatError);
+            damagePotential.DamageLowerBoundDragon = wotReader.ReadAndParseFloat("Damage Lower Bound: Dragon Float ", ignoreFormatError);
+            damagePotential.DamageUpperBoundDragon = wotReader.ReadAndParseFloat("Damage Upper Bound: Dragon Float ", ignoreFormatError);
         }
 
         #endregion
