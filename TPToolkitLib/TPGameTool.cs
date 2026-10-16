@@ -29,7 +29,7 @@ namespace TPToolkitLib
 
         private static void LoadWorldObjects(string worldObjectFolderPath)
         {
-
+            WotTool.ResolveDependencies();
         }
 
         private static void LoadMeshScenes(string meshSceneFolderPath)
