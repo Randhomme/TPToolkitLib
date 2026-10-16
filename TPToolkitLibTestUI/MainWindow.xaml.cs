@@ -207,9 +207,19 @@ namespace TPToolkitLibUITest
                 Filter = "World object |*.wot",
                 Title = "Select wot",
             };
+            var sfd = new SaveFileDialog
+            {
+                Title = "Save wot",
+                DefaultExt = "wot",
+                Filter = "World object |*.wot",
+            };
             if (ofd.ShowDialog() == true)
             {
                 var wot = WotTool.WorldObjectFromWot(ofd.FileName, false);
+                if(sfd.ShowDialog() == true)
+                {
+                    WotTool.WorldObjectToWot(wot, sfd.FileName);
+                }
             }
         }
 
@@ -228,6 +238,7 @@ namespace TPToolkitLibUITest
                 {
                     var file = files[i];
                     var wot = WotTool.WorldObjectFromWot(file, false);
+                    WotTool.WorldObjectToWot(wot, $"{Path.GetDirectoryName(file)}/Exported/{wot.Type}.wot");
                 }
             }
         }
