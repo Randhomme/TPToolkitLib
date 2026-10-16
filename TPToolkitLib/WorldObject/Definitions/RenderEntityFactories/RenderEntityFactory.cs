@@ -15,7 +15,7 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
         public IList<MeshAttribute> MeshAttributes { get; }
         public float RotationSpeed { get; set; }
         public string MeshSceneName { get; set; } = string.Empty;
-        public MsbScene? MsbScene { get; set; }
+        public MsbScene? MeshScene { get; set; }
         public string RenderEffectName { get; set; } = string.Empty;
         public RenderEntityFactory(string type) : base(type)
         {
@@ -24,25 +24,26 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
 
         public void ResolveDependency()
         {
-            MsbScene = TPGameTool.MeshScenes.FirstOrDefault((ms) => ms.Name.Equals(MeshSceneName, StringComparison.OrdinalIgnoreCase));
-            if (MsbScene != null)
+            MeshScene = TPGameTool.MeshScenes.FirstOrDefault((ms) => ms.Name.Equals(MeshSceneName, StringComparison.OrdinalIgnoreCase));
+            if (MeshScene != null)
             {
                 for (int i = 0; i < MeshAttributes.Count; i++)
                 {
                     var meshAttribute = MeshAttributes[i];
-                    meshAttribute.MsbElement = GetMsbElementFromMsbScene(MsbScene, meshAttribute.MeshName);
+                    meshAttribute.Mesh = GetMsbElementFromMsbScene(MeshScene, meshAttribute.MeshName);
                     for (int j = 0; j < meshAttribute.MeshSubAttributes.Count; j++)
                     {
                         var meshSubAttribute = meshAttribute.MeshSubAttributes[j];
                         switch (meshSubAttribute)
                         {
-                            //case GunPlacement gunPlacement:
-                            //    break;
+                            case DockPoint dockPoint:
+                                dockPoint.Animation = MeshScene.MsbAnimations.FirstOrDefault((msba) => string.Equals(msba.Name, dockPoint.AnimationName));
+                                break;
                             case DamageSection damageSection:
                                 for(int k = 0; k < damageSection.Adjacents.Count; k++)
                                 {
                                     var adjacentName = damageSection.Adjacents[k];
-                                    var adjacentElement = GetMsbElementFromMsbScene(MsbScene, adjacentName);
+                                    var adjacentElement = GetMsbElementFromMsbScene(MeshScene, adjacentName);
                                     if (adjacentElement != null)
                                         damageSection.AdjacentElements.Add(adjacentElement);
                                 }
