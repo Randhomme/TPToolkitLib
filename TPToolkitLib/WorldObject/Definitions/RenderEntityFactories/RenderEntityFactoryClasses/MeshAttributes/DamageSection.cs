@@ -19,7 +19,7 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
         public bool Swappable { get; set; }
         public Material Material { get; set; }
         public int Hitpoints { get; set; }
-        public int VitalSectionCoreDamagePercent { get; set; }
+        public int VitalSectionCoreDamagePercent { get; set; } = -1;
         public IList<Critical> Criticals { get; } = [];
         public IList<string> Adjacents { get; } = [];
         public IList<MsbElement> AdjacentElements { get; } = [];
