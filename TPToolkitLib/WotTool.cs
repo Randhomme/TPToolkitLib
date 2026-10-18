@@ -2,12 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TPToolkitLib.Enums;
 using TPToolkitLib.Exceptions;
 using TPToolkitLib.Interfaces;
-using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.Utils;
 using TPToolkitLib.WorldObject;
 using TPToolkitLib.WorldObject.Definitions;
@@ -225,6 +222,8 @@ namespace TPToolkitLib
                 WritePhysicsDefinition(wotWriter, worldObjectType.PhysicsDefinition);
                 wotWriter.WriteLine("Definition String 'COLLISIONDEFINITION'");
                 WriteCollisionDefinition(wotWriter, worldObjectType.CollisionDefinition);
+                wotWriter.WriteLine("Definition String 'CUSTOMINFODEFINITION'");
+                WriteCustomInfoDefinition(wotWriter, worldObjectType.CustomInfoDefinition);
             }
         }
 
@@ -1128,7 +1127,7 @@ namespace TPToolkitLib
         {
             var asteroidCustomInfoFactory = new AsteroidCustomInfoFactory(customInfoDefinitionString)
             {
-                HitPoints = wotReader.ReadAndParseInt("Max Hit Points Int ", ignoreFormatError),
+                MaxHitPoints = wotReader.ReadAndParseInt("Max Hit Points Int ", ignoreFormatError),
                 WorldObjectToCreateUponDeath0Name = wotReader.ReadString("WorldObject To Create Upon Death 0 String "),
                 WorldObjectToCreateUponDeath1Name = wotReader.ReadString("WorldObject To Create Upon Death 1 String "),
                 WorldObjectToCreateUponDeath2Name = wotReader.ReadString("WorldObject To Create Upon Death 2 String "),
@@ -1670,6 +1669,78 @@ namespace TPToolkitLib
                 wotWriter.WriteLine("EntityType String ''");
         }
 
+        private static void WriteCustomInfoDefinition(StreamWriter wotWriter, CustomInfoDefinition? customInfoDefinition)
+        {
+            if (customInfoDefinition != null)
+            {
+                wotWriter.WriteLine($"EntityType String '{customInfoDefinition.Type}'");
+                switch (customInfoDefinition)
+                {
+                    case DragonCustomInfoFactory dragonCustomInfoFactory:
+                        WriteDragonCustomInfoFactory(wotWriter, dragonCustomInfoFactory);
+                        break;
+                    case SpaceAnimalCustomInfoFactory spaceAnimalCustomInfoFactory:
+                        WriteSpaceAnimalCustomInfoFactory(wotWriter, spaceAnimalCustomInfoFactory);
+                        break;
+                    case AsteroidCustomInfoFactory asteroidCustomInfoFactory:
+                        WriteAsteroidCustomInfoFactory(wotWriter, asteroidCustomInfoFactory);
+                        break;
+                    case IslandCustomInfoFactory islandCustomInfoFactory:
+                        WriteIslandCustomInfoFactory(wotWriter, islandCustomInfoFactory);
+                        break;
+                    case EnergyNetCustomInfoFactory energyNetCustomInfoFactory:
+                        WriteEnergyNetCustomInfoFactory(wotWriter, energyNetCustomInfoFactory);
+                        break;
+                    case GrapplingHarpoonCustomInfoFactory grapplingHarpoonCustomInfoFactory:
+                        WriteGrapplingHarpoonCustomInfoFactory(wotWriter, grapplingHarpoonCustomInfoFactory);
+                        break;
+                    case GravChargeCustomInfoFactory gravChargeCustomInfoFactory:
+                        WriteGravChargeCustomInfoFactory(wotWriter, gravChargeCustomInfoFactory);
+                        break;
+                    case NovaMortarCustomInfoFactory novaMortarCustomInfoFactory:
+                        WriteNovaMortarCustomInfoFactory(wotWriter, novaMortarCustomInfoFactory);
+                        break;
+                    case MineCustomInfoFactory mineCustomInfoFactory:
+                        WriteMineCustomInfoFactory(wotWriter, mineCustomInfoFactory);
+                        break;
+                    case StarMortarCustomInfoFactory starMortarCustomInfoFactory:
+                        WriteStarMortarCustomInfoFactory(wotWriter, starMortarCustomInfoFactory);
+                        break;
+                    case TorpedoCustomInfoFactory torpedoCustomInfoFactory:
+                        WriteTorpedoCustomInfoFactory(wotWriter, torpedoCustomInfoFactory);
+                        break;
+                    case BulletCustomInfoFactory bulletCustomInfoFactory:
+                        WriteBulletCustomInfoFactory(wotWriter, bulletCustomInfoFactory);
+                        break;
+                    case CrewCustomInfoFactory crewCustomInfoFactory:
+                        WriteCrewCustomInfoFactory(wotWriter, crewCustomInfoFactory);
+                        break;
+                    case GunCustomInfoFactory gunCustomInfoFactory:
+                        WriteGunCustomInfoFactory(wotWriter, gunCustomInfoFactory);
+                        break;
+                    case ShipCustomInfoFactory shipCustomInfoFactory:
+                        WriteShipCustomInfoFactory(wotWriter, shipCustomInfoFactory);
+                        break;
+                    case ShipDebrisCustomInfoFactory shipDebrisCustomInfoFactory:
+                        WriteShipDebrisCustomInfoFactory(wotWriter, shipDebrisCustomInfoFactory);
+                        break;
+                    case BlackHoleCustomInfoFactory blackHoleCustomInfoFactory:
+                        WriteBlackHoleCustomInfoFactory(wotWriter, blackHoleCustomInfoFactory);
+                        break;
+                    case EtheriumCurrentCustomInfoFactory etheriumCurrentCustomInfoFactory:
+                        WriteEtheriumCurrentCustomInfoFactory(wotWriter, etheriumCurrentCustomInfoFactory);
+                        break;
+                    case NebulaCustomInfoFactory nebulaCustomInfoFactory:
+                        WriteNebulaCustomInfoFactory(wotWriter, nebulaCustomInfoFactory);
+                        break;
+                    default:
+                        throw new TPException($"CUSTOMINFODEFINITION '{customInfoDefinition.GetType().Name}' is not a valid factory.");
+                }
+            }
+            else
+                wotWriter.WriteLine("EntityType String ''");
+        }
+
         #endregion
 
         #region Write AIEntity factories
@@ -1850,7 +1921,7 @@ namespace TPToolkitLib
         {
             wotWriter.WriteLineLevel("AttributeName String 'GunPlacement'", level);
             wotWriter.WriteLineLevel($"DescriptorName String '{gunPlacement.DescriptorName}'", level);
-            wotWriter.WriteLineLevel($"AssociationName String '{gunPlacement.GunName},{gunPlacement.MaxRotation},{gunPlacement.Bank}'", level);
+            wotWriter.WriteLineLevel($"AssociationName String '{gunPlacement.GunName},{gunPlacement.MaxRotation},{gunPlacement.Bank.GetName()}'", level);
         }
 
         private static void WriteDamageSection(StreamWriter wotWriter, DamageSection damageSection, int level)
@@ -1872,7 +1943,7 @@ namespace TPToolkitLib
                 wotWriter.Write($",criticals={criticals}");
             var adjacents = string.Join("+", damageSection.Adjacents);
             if (!string.IsNullOrEmpty(adjacents))
-                wotWriter.Write($",adjacents={adjacents}");
+                wotWriter.Write($",adjacent={adjacents}");
             if (!string.IsNullOrEmpty(damageSection.DebrisMeshScene))
                 wotWriter.Write($",debrisMeshScene={damageSection.DebrisMeshScene}");
             if (!string.IsNullOrEmpty(damageSection.DebrisFx))
@@ -1896,7 +1967,7 @@ namespace TPToolkitLib
         {
             wotWriter.WriteLineLevel("AttributeName String 'DockPoint'", level);
             wotWriter.WriteLineLevel($"DescriptorName String '{dockPoint.DescriptorName}'", level);
-            wotWriter.WriteLineLevel($"AssociationName String ''", level);
+            wotWriter.WriteLineLevel($"AssociationName String '{dockPoint.AnimationName}'", level);
         }
 
         private static void WriteFlagAttachmentPoint(StreamWriter wotWriter, FlagAttachmentPoint flagAttachmentPoint, int level)
@@ -2134,6 +2205,497 @@ namespace TPToolkitLib
                     wotWriter.WriteLineLevel($"LocalPosition Vector3( {boundingSphere.LocalPosition.X:F6}, {boundingSphere.LocalPosition.Y:F6}, {boundingSphere.LocalPosition.Z:F6} )", lvl);
                     wotWriter.WriteLineLevel($"Radius Float {boundingSphere.Radius:F6}", lvl);
                 }
+            });
+        }
+
+        #endregion
+
+        #region Write CustomInfo factories
+
+        private static void WriteDragonCustomInfoFactory(StreamWriter wotWriter, DragonCustomInfoFactory dragonCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'DragonCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteSection("GUIInfo Chunk", (lvl1) =>
+                {
+                    wotWriter.WriteLineLevel($"Selected Indicator Percentage Of Radius Float {dragonCustomInfoFactory.SelectedIndicatorPercentageOfRadius:F6}", lvl1);
+                    wotWriter.WriteLineLevel($"Distance to Start Sphere Picking Float {dragonCustomInfoFactory.DistancetoStartSpherePicking:F6}", lvl1);
+                }, lvl);
+                wotWriter.WriteLineLevel($"ShortestTimeBetweenSounds Float {dragonCustomInfoFactory.ShortestTimeBetweenSounds:F6}", lvl);
+                wotWriter.WriteLineLevel($"LongestTimeBetweenSounds Float {dragonCustomInfoFactory.LongestTimeBetweenSounds:F6}", lvl);
+                wotWriter.WriteLineLevel($"Sound_0 String '{dragonCustomInfoFactory.Sound_0}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_1 String '{dragonCustomInfoFactory.Sound_1}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_2 String '{dragonCustomInfoFactory.Sound_2}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_3 String '{dragonCustomInfoFactory.Sound_3}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_4 String '{dragonCustomInfoFactory.Sound_4}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_5 String '{dragonCustomInfoFactory.Sound_5}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_6 String '{dragonCustomInfoFactory.Sound_6}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_7 String '{dragonCustomInfoFactory.Sound_7}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_8 String '{dragonCustomInfoFactory.Sound_8}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_9 String '{dragonCustomInfoFactory.Sound_9}'", lvl);
+                wotWriter.WriteLineLevel($"Report spotting Bool {dragonCustomInfoFactory.ReportSpotting}", lvl);
+                if (dragonCustomInfoFactory.ReportSpotting)
+                    wotWriter.WriteLineLevel($"Report type String '{dragonCustomInfoFactory.ReportType.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"Sound Distance Float {dragonCustomInfoFactory.SoundDistance:F6}", lvl);
+            });
+        }
+
+        private static void WriteSpaceAnimalCustomInfoFactory(StreamWriter wotWriter, SpaceAnimalCustomInfoFactory spaceAnimalCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'SpaceAnimalCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteSection("GUIInfo Chunk", (lvl1) =>
+                {
+                    wotWriter.WriteLineLevel($"Selected Indicator Percentage Of Radius Float {spaceAnimalCustomInfoFactory.SelectedIndicatorPercentageOfRadius:F6}", lvl1);
+                    wotWriter.WriteLineLevel($"Distance to Start Sphere Picking Float {spaceAnimalCustomInfoFactory.DistancetoStartSpherePicking:F6}", lvl1);
+                }, lvl);
+                wotWriter.WriteLineLevel($"ShortestTimeBetweenSounds Float {spaceAnimalCustomInfoFactory.ShortestTimeBetweenSounds:F6}", lvl);
+                wotWriter.WriteLineLevel($"LongestTimeBetweenSounds Float {spaceAnimalCustomInfoFactory.LongestTimeBetweenSounds:F6}", lvl);
+                wotWriter.WriteLineLevel($"Sound_0 String '{spaceAnimalCustomInfoFactory.Sound_0}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_1 String '{spaceAnimalCustomInfoFactory.Sound_1}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_2 String '{spaceAnimalCustomInfoFactory.Sound_2}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_3 String '{spaceAnimalCustomInfoFactory.Sound_3}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_4 String '{spaceAnimalCustomInfoFactory.Sound_4}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_5 String '{spaceAnimalCustomInfoFactory.Sound_5}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_6 String '{spaceAnimalCustomInfoFactory.Sound_6}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_7 String '{spaceAnimalCustomInfoFactory.Sound_7}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_8 String '{spaceAnimalCustomInfoFactory.Sound_8}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_9 String '{spaceAnimalCustomInfoFactory.Sound_9}'", lvl);
+                wotWriter.WriteLineLevel($"Report spotting Bool {spaceAnimalCustomInfoFactory.ReportSpotting}", lvl);
+                if (spaceAnimalCustomInfoFactory.ReportSpotting)
+                    wotWriter.WriteLineLevel($"Report type String '{spaceAnimalCustomInfoFactory.ReportType.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"Sound Distance Float {spaceAnimalCustomInfoFactory.SoundDistance:F6}", lvl);
+            });
+        }
+
+        private static void WriteAsteroidCustomInfoFactory(StreamWriter wotWriter, AsteroidCustomInfoFactory asteroidCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'AsteroidCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Max Hit Points Int {asteroidCustomInfoFactory.MaxHitPoints}", lvl);
+                wotWriter.WriteLineLevel($"WorldObject To Create Upon Death 0 String '{asteroidCustomInfoFactory.WorldObjectToCreateUponDeath0Name}'", lvl);
+                wotWriter.WriteLineLevel($"WorldObject To Create Upon Death 1 String '{asteroidCustomInfoFactory.WorldObjectToCreateUponDeath1Name}'", lvl);
+                wotWriter.WriteLineLevel($"WorldObject To Create Upon Death 2 String '{asteroidCustomInfoFactory.WorldObjectToCreateUponDeath2Name}'", lvl);
+                wotWriter.WriteLineLevel($"WorldObject To Create Upon Death 3 String '{asteroidCustomInfoFactory.WorldObjectToCreateUponDeath3Name}'", lvl);
+                wotWriter.WriteLineLevel($"WorldObject To Create Upon Death 4 String '{asteroidCustomInfoFactory.WorldObjectToCreateUponDeath4Name}'", lvl);
+                wotWriter.WriteLineLevel($"WorldObject To Create Upon Death 5 String '{asteroidCustomInfoFactory.WorldObjectToCreateUponDeath5Name}'", lvl);
+                wotWriter.WriteLineLevel($"WorldObject To Create Upon Death 6 String '{asteroidCustomInfoFactory.WorldObjectToCreateUponDeath6Name}'", lvl);
+                wotWriter.WriteLineLevel($"WorldObject To Create Upon Death 7 String '{asteroidCustomInfoFactory.WorldObjectToCreateUponDeath7Name}'", lvl);
+                wotWriter.WriteLineLevel($"WorldObject To Create Upon Death 8 String '{asteroidCustomInfoFactory.WorldObjectToCreateUponDeath8Name}'", lvl);
+                wotWriter.WriteLineLevel($"WorldObject To Create Upon Death 9 String '{asteroidCustomInfoFactory.WorldObjectToCreateUponDeath9Name}'", lvl);
+                wotWriter.WriteLineLevel($"ExplosionEffect String '{asteroidCustomInfoFactory.ExplosionEffect}'", lvl);
+                wotWriter.WriteLineLevel($"Report Spotting Bool {asteroidCustomInfoFactory.ReportSpotting}", lvl);
+            });
+        }
+
+        private static void WriteIslandCustomInfoFactory(StreamWriter wotWriter, IslandCustomInfoFactory islandCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'IslandCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point # 00 Vector3( {islandCustomInfoFactory.OcclusionPolygonPoint00.X:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint00.Y:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint00.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point # 01 Vector3( {islandCustomInfoFactory.OcclusionPolygonPoint01.X:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint01.Y:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint01.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point # 02 Vector3( {islandCustomInfoFactory.OcclusionPolygonPoint02.X:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint02.Y:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint02.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point # 03 Vector3( {islandCustomInfoFactory.OcclusionPolygonPoint03.X:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint03.Y:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint03.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point # 04 Vector3( {islandCustomInfoFactory.OcclusionPolygonPoint04.X:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint04.Y:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint04.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point # 05 Vector3( {islandCustomInfoFactory.OcclusionPolygonPoint05.X:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint05.Y:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint05.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point # 06 Vector3( {islandCustomInfoFactory.OcclusionPolygonPoint06.X:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint06.Y:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint06.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point # 07 Vector3( {islandCustomInfoFactory.OcclusionPolygonPoint07.X:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint07.Y:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint07.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point # 08 Vector3( {islandCustomInfoFactory.OcclusionPolygonPoint08.X:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint08.Y:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint08.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point # 09 Vector3( {islandCustomInfoFactory.OcclusionPolygonPoint09.X:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint09.Y:F6}, {islandCustomInfoFactory.OcclusionPolygonPoint09.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Occlusion Polygon Point Count Int {islandCustomInfoFactory.OcclusionPolygonPointCount}", lvl);
+                wotWriter.WriteLineLevel($"Race String '{islandCustomInfoFactory.Race.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"HasAmbientSound Bool {islandCustomInfoFactory.HasAmbientSound}", lvl);
+                if (islandCustomInfoFactory.HasAmbientSound)
+                {
+                    wotWriter.WriteLineLevel($"AmbientSoundMaxDistance Float {islandCustomInfoFactory.AmbientSoundMaxDistance:F6}", lvl);
+                    wotWriter.WriteLineLevel($"AmbientSoundName String '{islandCustomInfoFactory.AmbientSoundName}'", lvl);
+                }
+                wotWriter.WriteLineLevel($"Core Damage Section Max HitPoints Int {islandCustomInfoFactory.CoreDamageSectionMaxHitPoints}", lvl);
+                wotWriter.WriteLineLevel($"AnnounceSighting Bool {islandCustomInfoFactory.AnnounceSighting}", lvl);
+            });
+        }
+
+        private static void WriteBulletCustomInfoFactory(StreamWriter wotWriter, BulletCustomInfoFactory bulletCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'BulletCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                WriteBulletCustomInfoFactoryProperties(wotWriter, bulletCustomInfoFactory, lvl);
+            });
+        }
+        
+        private static void WriteStarMortarCustomInfoFactory(StreamWriter wotWriter, StarMortarCustomInfoFactory starMortarCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'StarMortarCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Magnitude Float {starMortarCustomInfoFactory.Magnitude:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxRadius Float {starMortarCustomInfoFactory.MaxRadius:F6}", lvl);
+                wotWriter.WriteLineLevel($"Duration Float {starMortarCustomInfoFactory.Duration:F6}", lvl);
+                WriteBulletCustomInfoFactoryProperties(wotWriter, starMortarCustomInfoFactory, lvl);
+            });
+        }
+
+        private static void WriteEnergyNetCustomInfoFactory(StreamWriter wotWriter, EnergyNetCustomInfoFactory energyNetCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'EnergyNetCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Duration Float {energyNetCustomInfoFactory.Duration:F6}", lvl);
+                wotWriter.WriteLineLevel($"PercentageOfEnergyDissipated Float {energyNetCustomInfoFactory.PercentageOfEnergyDissipated:F6}", lvl);
+                WriteBulletCustomInfoFactoryProperties(wotWriter, energyNetCustomInfoFactory, lvl);
+            });
+        }
+
+        private static void WriteGrapplingHarpoonCustomInfoFactory(StreamWriter wotWriter, GrapplingHarpoonCustomInfoFactory grapplingHarpoonCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'GrapplingHarpoonCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                WriteBulletCustomInfoFactoryProperties(wotWriter, grapplingHarpoonCustomInfoFactory, lvl);
+            });
+        }
+
+        private static void WriteGravChargeCustomInfoFactory(StreamWriter wotWriter, GravChargeCustomInfoFactory gravChargeCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'GravChargeCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Magnitude Float {gravChargeCustomInfoFactory.Magnitude:F6}", lvl);
+                wotWriter.WriteLineLevel($"Radius Float {gravChargeCustomInfoFactory.Radius:F6}", lvl);
+                wotWriter.WriteLineLevel($"Duration Float {gravChargeCustomInfoFactory.Duration:F6}", lvl);
+                WriteBulletCustomInfoFactoryProperties(wotWriter, gravChargeCustomInfoFactory, lvl);
+            });
+        }
+
+        private static void WriteNovaMortarCustomInfoFactory(StreamWriter wotWriter, NovaMortarCustomInfoFactory novaMortarCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'NovaMortarCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                WriteBulletCustomInfoFactoryProperties(wotWriter, novaMortarCustomInfoFactory, lvl);
+            });
+        }
+
+        private static void WriteMineCustomInfoFactory(StreamWriter wotWriter, MineCustomInfoFactory mineCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'MineCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                WriteBulletCustomInfoFactoryProperties(wotWriter, mineCustomInfoFactory, lvl);
+            });
+        }
+
+        private static void WriteTorpedoCustomInfoFactory(StreamWriter wotWriter, TorpedoCustomInfoFactory torpedoCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'TorpedoCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                WriteBulletCustomInfoFactoryProperties(wotWriter, torpedoCustomInfoFactory, lvl);
+            });
+        }
+
+        private static void WriteBulletCustomInfoFactoryProperties(StreamWriter wotWriter, BulletCustomInfoFactory bulletCustomInfoFactory, int level)
+        {
+            wotWriter.WriteLineLevel($"HitEffect String '{bulletCustomInfoFactory.HitEffect}'", level);
+            wotWriter.WriteLineLevel($"BulletEffect String '{bulletCustomInfoFactory.BulletEffect}'", level);
+            wotWriter.WriteLineLevel($"Damage HitPoints Int {bulletCustomInfoFactory.DamageHitPoints}", level);
+            wotWriter.WriteLineLevel($"Decal Damage Size String '{bulletCustomInfoFactory.DecalDamageSize.GetName()}'", level);
+            WriteDamagePotential(wotWriter, bulletCustomInfoFactory.DamagePotential, level);
+            wotWriter.WriteLineLevel($"Impact Sound Max Distance Float {bulletCustomInfoFactory.ImpactSoundMaxDistance:F6}", level);
+            wotWriter.WriteLineLevel($"Impact Sound Volume Float {bulletCustomInfoFactory.ImpactSoundVolume:F6}", level);
+            wotWriter.WriteLineLevel($"Travel Sound Max Distance Float {bulletCustomInfoFactory.TravelSoundMaxDistance:F6}", level);
+            wotWriter.WriteLineLevel($"Travel Sound Volume Float {bulletCustomInfoFactory.TravelSoundVolume:F6}", level);
+            wotWriter.WriteLineLevel($"RicochetSound: Hull Wood String '{bulletCustomInfoFactory.RicochetSoundHullWood}'", level);
+            wotWriter.WriteSection("ImpactSoundsHull Wood", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Sound_0 String '{bulletCustomInfoFactory.ImpactSound0HullWood}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_1 String '{bulletCustomInfoFactory.ImpactSound1HullWood}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_2 String '{bulletCustomInfoFactory.ImpactSound2HullWood}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_3 String '{bulletCustomInfoFactory.ImpactSound3HullWood}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_4 String '{bulletCustomInfoFactory.ImpactSound4HullWood}'", lvl);
+            }, level);
+            wotWriter.WriteLineLevel($"RicochetSound: Hull ReInforced Wood String '{bulletCustomInfoFactory.RicochetSoundHullReInforcedWood}'", level);
+            wotWriter.WriteSection("ImpactSoundsHull ReInforced Wood", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Sound_0 String '{bulletCustomInfoFactory.ImpactSound0HullReInforcedWood}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_1 String '{bulletCustomInfoFactory.ImpactSound1HullReInforcedWood}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_2 String '{bulletCustomInfoFactory.ImpactSound2HullReInforcedWood}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_3 String '{bulletCustomInfoFactory.ImpactSound3HullReInforcedWood}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_4 String '{bulletCustomInfoFactory.ImpactSound4HullReInforcedWood}'", lvl);
+            }, level);
+            wotWriter.WriteLineLevel($"RicochetSound: Hull Iron String '{bulletCustomInfoFactory.RicochetSoundHullIron}'", level);
+            wotWriter.WriteSection("ImpactSoundsHull Iron", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Sound_0 String '{bulletCustomInfoFactory.ImpactSound0HullIron}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_1 String '{bulletCustomInfoFactory.ImpactSound1HullIron}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_2 String '{bulletCustomInfoFactory.ImpactSound2HullIron}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_3 String '{bulletCustomInfoFactory.ImpactSound3HullIron}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_4 String '{bulletCustomInfoFactory.ImpactSound4HullIron}'", lvl);
+            }, level);
+            wotWriter.WriteLineLevel($"RicochetSound: Sail Cloth String '{bulletCustomInfoFactory.RicochetSoundSailCloth}'", level);
+            wotWriter.WriteSection("ImpactSoundsSail Cloth", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Sound_0 String '{bulletCustomInfoFactory.ImpactSound0SailCloth}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_1 String '{bulletCustomInfoFactory.ImpactSound1SailCloth}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_2 String '{bulletCustomInfoFactory.ImpactSound2SailCloth}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_3 String '{bulletCustomInfoFactory.ImpactSound3SailCloth}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_4 String '{bulletCustomInfoFactory.ImpactSound4SailCloth}'", lvl);
+            }, level);
+            wotWriter.WriteLineLevel($"RicochetSound: Wall Stone String '{bulletCustomInfoFactory.RicochetSoundWallStone}'", level);
+            wotWriter.WriteSection("ImpactSoundsWall Stone", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Sound_0 String '{bulletCustomInfoFactory.ImpactSound0WallStone}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_1 String '{bulletCustomInfoFactory.ImpactSound1WallStone}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_2 String '{bulletCustomInfoFactory.ImpactSound2WallStone}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_3 String '{bulletCustomInfoFactory.ImpactSound3WallStone}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_4 String '{bulletCustomInfoFactory.ImpactSound4WallStone}'", lvl);
+            }, level);
+            wotWriter.WriteLineLevel($"RicochetSound: Dragon Scale String '{bulletCustomInfoFactory.RicochetSoundDragonScale}'", level);
+            wotWriter.WriteSection("ImpactSoundsDragon Scale", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Sound_0 String '{bulletCustomInfoFactory.ImpactSound0DragonScale}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_1 String '{bulletCustomInfoFactory.ImpactSound1DragonScale}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_2 String '{bulletCustomInfoFactory.ImpactSound2DragonScale}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_3 String '{bulletCustomInfoFactory.ImpactSound3DragonScale}'", lvl);
+                wotWriter.WriteLineLevel($"Sound_4 String '{bulletCustomInfoFactory.ImpactSound4DragonScale}'", lvl);
+            }, level);
+            wotWriter.WriteLineLevel($"Travel Sound String '{bulletCustomInfoFactory.TravelSound}'", level);
+            if (bulletCustomInfoFactory.Lifetime >= 0)
+                wotWriter.WriteLineLevel($"Lifetime Float {bulletCustomInfoFactory.Lifetime:F6}", level);
+        }
+
+        private static void WriteDamagePotential(StreamWriter wotWriter, DamagePotential damagePotential, int level)
+        {
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel("# Hull Wood DamagePotential", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel($"Chance of Critical Damage: Wood Float {damagePotential.ChanceOfCriticalDamageWood:F6}", level);
+            wotWriter.WriteLineLevel($"Chance of Fire: Wood Float {damagePotential.ChanceOfFireWood:F6}", level);
+            wotWriter.WriteLineLevel($"Initial Fire Strength: Wood Float {damagePotential.InitialFireStrengthWood:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Lower Bound: Wood Float {damagePotential.DamageLowerBoundWood:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Upper Bound: Wood Float {damagePotential.DamageUpperBoundWood:F6}", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel("# Hull ReInforced Wood DamagePotential", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel($"Chance of Critical Damage: Reinforced Float {damagePotential.ChanceOfCriticalDamageReinforced:F6}", level);
+            wotWriter.WriteLineLevel($"Chance of Fire: Reinforced Float {damagePotential.ChanceOfFireReinforced:F6}", level);
+            wotWriter.WriteLineLevel($"Initial Fire Strength: Reinforced Float {damagePotential.InitialFireStrengthReinforced:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Lower Bound: Reinforced Float {damagePotential.DamageLowerBoundReinforced:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Upper Bound: Reinforced Float {damagePotential.DamageUpperBoundReinforced:F6}", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel("# Hull Iron DamagePotential", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel($"Chance of Critical Damage: Iron Float {damagePotential.ChanceOfCriticalDamageIron:F6}", level);
+            wotWriter.WriteLineLevel($"Chance of Fire: Iron Float {damagePotential.ChanceOfFireIron:F6}", level);
+            wotWriter.WriteLineLevel($"Initial Fire Strength: Iron Float {damagePotential.InitialFireStrengthIron:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Lower Bound: Iron Float {damagePotential.DamageLowerBoundIron:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Upper Bound: Iron Float {damagePotential.DamageUpperBoundIron:F6}", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel("# Sail Cloth DamagePotential", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel($"Chance of Critical Damage: Cloth Float {damagePotential.ChanceOfCriticalDamageCloth:F6}", level);
+            wotWriter.WriteLineLevel($"Chance of Fire: Cloth Float {damagePotential.ChanceOfFireCloth:F6}", level);
+            wotWriter.WriteLineLevel($"Initial Fire Strength: Cloth Float {damagePotential.InitialFireStrengthCloth:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Lower Bound: Cloth Float {damagePotential.DamageLowerBoundCloth:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Upper Bound: Cloth Float {damagePotential.DamageUpperBoundCloth:F6}", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel("# Wall Stone DamagePotential", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel($"Chance of Critical Damage: Stone Float {damagePotential.ChanceOfCriticalDamageStone:F6}", level);
+            wotWriter.WriteLineLevel($"Chance of Fire: Stone Float {damagePotential.ChanceOfFireStone:F6}", level);
+            wotWriter.WriteLineLevel($"Initial Fire Strength: Stone Float {damagePotential.InitialFireStrengthStone:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Lower Bound: Stone Float {damagePotential.DamageLowerBoundStone:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Upper Bound: Stone Float {damagePotential.DamageUpperBoundStone:F6}", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel("# Dragon Scale DamagePotential", level);
+            wotWriter.WriteLineLevel("#", level);
+            wotWriter.WriteLineLevel($"Chance of Critical Damage: Dragon Float {damagePotential.ChanceOfCriticalDamageDragon:F6}", level);
+            wotWriter.WriteLineLevel($"Chance of Fire: Dragon Float {damagePotential.ChanceOfFireDragon:F6}", level);
+            wotWriter.WriteLineLevel($"Initial Fire Strength: Dragon Float {damagePotential.InitialFireStrengthDragon:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Lower Bound: Dragon Float {damagePotential.DamageLowerBoundDragon:F6}", level);
+            wotWriter.WriteLineLevel($"Damage Upper Bound: Dragon Float {damagePotential.DamageUpperBoundDragon:F6}", level);
+        }
+        
+        private static void WriteCrewCustomInfoFactory(StreamWriter wotWriter, CrewCustomInfoFactory crewCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'CrewCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Crew Race String '{crewCustomInfoFactory.CrewRace.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"Point Value Int {crewCustomInfoFactory.PointValue}", lvl);
+                wotWriter.WriteLineLevel($"Crew Name String ID String '{crewCustomInfoFactory.CrewNameStringID}'", lvl);
+                wotWriter.WriteLineLevel($"Leadership Skill Active Bool {crewCustomInfoFactory.LeadershipSkillActive}", lvl);
+                wotWriter.WriteLineLevel($"Leadership Skill Ability Value Int {crewCustomInfoFactory.LeadershipSkillAbilityValue}", lvl);
+                wotWriter.WriteLineLevel($"Navigation Skill Active Bool {crewCustomInfoFactory.NavigationSkillActive}", lvl);
+                wotWriter.WriteLineLevel($"Navigation Skill Ability Value Int {crewCustomInfoFactory.NavigationSkillAbilityValue}", lvl);
+                wotWriter.WriteLineLevel($"Spotting Skill Active Bool {crewCustomInfoFactory.SpottingSkillActive}", lvl);
+                wotWriter.WriteLineLevel($"Spotting Skill Ability Value Int {crewCustomInfoFactory.SpottingSkillAbilityValue}", lvl);
+                wotWriter.WriteLineLevel($"Engineering Skill Active Bool {crewCustomInfoFactory.EngineeringSkillActive}", lvl);
+                wotWriter.WriteLineLevel($"Engineering Skill Ability Value Int {crewCustomInfoFactory.EngineeringSkillAbilityValue}", lvl);
+                wotWriter.WriteLineLevel($"Rigging Skill Active Bool {crewCustomInfoFactory.RiggingSkillActive}", lvl);
+                wotWriter.WriteLineLevel($"Rigging Skill Ability Value Int {crewCustomInfoFactory.RiggingSkillAbilityValue}", lvl);
+                wotWriter.WriteLineLevel($"Combat Skill Active Bool {crewCustomInfoFactory.CombatSkillActive}", lvl);
+                wotWriter.WriteLineLevel($"Combat Skill Ability Value Int {crewCustomInfoFactory.CombatSkillAbilityValue}", lvl);
+                wotWriter.WriteLineLevel($"Gunnery Skill Active Bool {crewCustomInfoFactory.GunnerySkillActive}", lvl);
+                wotWriter.WriteLineLevel($"Gunnery Skill Ability Value Int {crewCustomInfoFactory.GunnerySkillAbilityValue}", lvl);
+                wotWriter.WriteLineLevel($"Talking Head Texture String '{crewCustomInfoFactory.TalkingHeadTexture}'", lvl);
+                wotWriter.WriteLineLevel($"Species String '{crewCustomInfoFactory.Species.GetName()}'", lvl);
+            });
+        }
+        
+        private static void WriteGunCustomInfoFactory(StreamWriter wotWriter, GunCustomInfoFactory gunCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'GunCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"BulletTypeName_Primary String '{gunCustomInfoFactory.BulletTypeName_PrimaryString}'", lvl);
+                wotWriter.WriteLineLevel($"BulletTypeName_Secondary String '{gunCustomInfoFactory.BulletTypeName_SecondaryString}'", lvl);
+                wotWriter.WriteLineLevel($"SoundName String '{gunCustomInfoFactory.SoundName}'", lvl);
+                wotWriter.WriteLineLevel($"MuzzleFlashEffect String '{gunCustomInfoFactory.MuzzleFlashEffect}'", lvl);
+                wotWriter.WriteLineLevel($"MuzzleSpeed Float {gunCustomInfoFactory.MuzzleSpeed:F6}", lvl);
+                wotWriter.WriteLineLevel($"DuringBurstReloadTime Float {gunCustomInfoFactory.DuringBurstReloadTime:F6}", lvl);
+                wotWriter.WriteLineLevel($"BulletsPerBurst Int {gunCustomInfoFactory.BulletsPerBurst}", lvl);
+                wotWriter.WriteLineLevel($"TimeBetweenBursts Float {gunCustomInfoFactory.TimeBetweenBursts:F6}", lvl);
+                wotWriter.WriteLineLevel($"CalculateAccuracyDeviationDuringBurst Bool {gunCustomInfoFactory.CalculateAccuracyDeviationDuringBurst}", lvl);
+                wotWriter.WriteLineLevel($"WeaponBar Icon Texture String '{gunCustomInfoFactory.WeaponBarIconTexture}'", lvl);
+                wotWriter.WriteLineLevel($"VerticalRotationSpeed Float {gunCustomInfoFactory.VerticalRotationSpeed:F6}", lvl);
+                wotWriter.WriteLineLevel($"HorizontalRotationSpeed Float {gunCustomInfoFactory.HorizontalRotationSpeed:F6}", lvl);
+                wotWriter.WriteLineLevel($"VerticalMinAngle Float {gunCustomInfoFactory.VerticalMinAngle:F6}", lvl);
+                wotWriter.WriteLineLevel($"VerticalMaxAngle Float {gunCustomInfoFactory.VerticalMaxAngle:F6}", lvl);
+                wotWriter.WriteLineLevel($"LobAngle Float {gunCustomInfoFactory.LobAngle:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaximumRange_Range Float {gunCustomInfoFactory.MaximumRange_Range:F6}", lvl);
+                wotWriter.WriteLineLevel($"LongRange_Range Float {gunCustomInfoFactory.LongRange_Range:F6}", lvl);
+                wotWriter.WriteLineLevel($"EffectiveRange_Range Float {gunCustomInfoFactory.EffectiveRange_Range:F6}", lvl);
+                wotWriter.WriteLineLevel($"BulletAffectedByGravity Bool {gunCustomInfoFactory.BulletAffectedByGravity}", lvl);
+                wotWriter.WriteLineLevel($"MaximumRange_AccuracyDeviation Float {gunCustomInfoFactory.MaximumRange_AccuracyDeviation:F6}", lvl);
+                wotWriter.WriteLineLevel($"LongRange_AccuracyDeviation Float {gunCustomInfoFactory.LongRange_AccuracyDeviation:F6}", lvl);
+                wotWriter.WriteLineLevel($"EffectiveRange_AccuracyDeviation Float {gunCustomInfoFactory.EffectiveRange_AccuracyDeviation:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaximumRange_RicochetFactor Float {gunCustomInfoFactory.MaximumRange_RicochetFactor:F6}", lvl);
+                wotWriter.WriteLineLevel($"LongRange_RicochetFactor Float {gunCustomInfoFactory.LongRange_RicochetFactor:F6}", lvl);
+                wotWriter.WriteLineLevel($"EffectiveRange_RicochetFactor Float {gunCustomInfoFactory.EffectiveRange_RicochetFactor:F6}", lvl);
+                wotWriter.WriteLineLevel($"Victory Point Cost Int {gunCustomInfoFactory.VictoryPointCost}", lvl);
+                wotWriter.WriteLineLevel($"Gun Name String ID String '{gunCustomInfoFactory.GunNameStringID}'", lvl);
+                wotWriter.WriteLineLevel($"Mount Type String '{gunCustomInfoFactory.MountType.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"Exclusion Race String '{gunCustomInfoFactory.ExclusionRace.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"Can Be Fired While Cloaked Bool {gunCustomInfoFactory.CanBeFiredWhileCloaked}", lvl);
+                wotWriter.WriteLineLevel($"Firing Crew Alert String '{gunCustomInfoFactory.FiringCrewAlert.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"SoundMaxDistance Float {gunCustomInfoFactory.SoundMaxDistance:F6}", lvl);
+                wotWriter.WriteLineLevel($"SoundVolume Float {gunCustomInfoFactory.SoundVolume:F6}", lvl);
+            });
+        }
+
+        private static void WriteShipCustomInfoFactory(StreamWriter wotWriter, ShipCustomInfoFactory shipCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'ShipCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteSection("GUIInfo Chunk", (lvl1) =>
+                {
+                    wotWriter.WriteLineLevel($"ShipBar Icon Texture String '{shipCustomInfoFactory.ShipBarIconTexture}'", lvl1);
+                    wotWriter.WriteLineLevel($"Selected Indicator Percentage Of Radius Float {shipCustomInfoFactory.SelectedIndicatorPercentageOfRadius:F6}", lvl1);
+                    wotWriter.WriteLineLevel($"Distance to Start Sphere Picking Float {shipCustomInfoFactory.DistanceToStartSpherePicking:F6}", lvl1);
+                }, lvl);
+                wotWriter.WriteLineLevel($"Displayable Shipname String ID String '{shipCustomInfoFactory.DisplayableShipnameStringID}'", lvl);
+                wotWriter.WriteLineLevel($"Ship Race String '{shipCustomInfoFactory.ShipRace.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"Is Tender Bool {shipCustomInfoFactory.IsTender}", lvl);
+                wotWriter.WriteLineLevel($"Number of lifeboats Int {shipCustomInfoFactory.NumberOfLifeboats}", lvl);
+                wotWriter.WriteLineLevel($"Is Lifeboat Bool {shipCustomInfoFactory.IsLifeboat}", lvl);
+                wotWriter.WriteLineLevel($"Is Cloakable Bool {shipCustomInfoFactory.IsCloakable}", lvl);
+                wotWriter.WriteLineLevel($"Ship Size Int {shipCustomInfoFactory.ShipSize}", lvl);
+                wotWriter.WriteLineLevel($"Core Damage Section Max HitPoints Int {shipCustomInfoFactory.CoreDamageSectionMaxHitPoints}", lvl);
+                wotWriter.WriteLineLevel($"Explosion Effect Name String '{shipCustomInfoFactory.ExplosionEffectName}'", lvl);
+                wotWriter.WriteLineLevel($"EngineType String '{shipCustomInfoFactory.EngineType.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"EngineSoundName Emergency String '{shipCustomInfoFactory.EngineSoundNameEmergency}'", lvl);
+                wotWriter.WriteLineLevel($"EngineSoundName Full String '{shipCustomInfoFactory.EngineSoundNameFull}'", lvl);
+                wotWriter.WriteLineLevel($"EngineSoundName Half String '{shipCustomInfoFactory.EngineSoundNameHalf}'", lvl);
+                wotWriter.WriteLineLevel($"Victory Point Cost Int {shipCustomInfoFactory.VictoryPointCost}", lvl);
+                wotWriter.WriteLineLevel($"Available in Multiplayer? Bool {shipCustomInfoFactory.IsAvailableInMultiplayer}", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 00 String '{shipCustomInfoFactory.AvailableUniqueShipNameID00}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 01 String '{shipCustomInfoFactory.AvailableUniqueShipNameID01}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 02 String '{shipCustomInfoFactory.AvailableUniqueShipNameID02}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 03 String '{shipCustomInfoFactory.AvailableUniqueShipNameID03}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 04 String '{shipCustomInfoFactory.AvailableUniqueShipNameID04}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 05 String '{shipCustomInfoFactory.AvailableUniqueShipNameID05}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 06 String '{shipCustomInfoFactory.AvailableUniqueShipNameID06}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 07 String '{shipCustomInfoFactory.AvailableUniqueShipNameID07}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 08 String '{shipCustomInfoFactory.AvailableUniqueShipNameID08}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 09 String '{shipCustomInfoFactory.AvailableUniqueShipNameID09}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 10 String '{shipCustomInfoFactory.AvailableUniqueShipNameID10}'", lvl);
+                wotWriter.WriteLineLevel($"Available Unique Ship Name ID 11 String '{shipCustomInfoFactory.AvailableUniqueShipNameID11}'", lvl);
+                wotWriter.WriteLineLevel($"Max number of Gunners Int {shipCustomInfoFactory.MaxNumberOfGunners}", lvl);
+                wotWriter.WriteLineLevel($"Max number of Captains Int {shipCustomInfoFactory.MaxNumberOfCaptains}", lvl);
+                wotWriter.WriteLineLevel($"Max number of First Mates Int {shipCustomInfoFactory.MaxNumberOfFirstMates}", lvl);
+                wotWriter.WriteLineLevel($"Max number of Navigators Int {shipCustomInfoFactory.MaxNumberOfNavigators}", lvl);
+                wotWriter.WriteLineLevel($"Max number of Engineers Int {shipCustomInfoFactory.MaxNumberOfEngineers}", lvl);
+                wotWriter.WriteLineLevel($"Max number of Riggers Int {shipCustomInfoFactory.MaxNumberOfRiggers}", lvl);
+                wotWriter.WriteLineLevel($"Max number of Fighters Int {shipCustomInfoFactory.MaxNumberOfFighters}", lvl);
+                wotWriter.WriteLineLevel($"Max number of Lookouts Int {shipCustomInfoFactory.MaxNumberOfLookouts}", lvl);
+                wotWriter.WriteLineLevel($"Repair Effect Name String '{shipCustomInfoFactory.RepairEffectName}'", lvl);
+            });
+        }
+
+        private static void WriteShipDebrisCustomInfoFactory(StreamWriter wotWriter, ShipDebrisCustomInfoFactory shipDebrisCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'ShipDebrisCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"LifeTimeMin Float {shipDebrisCustomInfoFactory.LifeTimeMin:F6}", lvl);
+                wotWriter.WriteLineLevel($"LifeTimeMax Float {shipDebrisCustomInfoFactory.LifeTimeMax:F6}", lvl);
+            });
+        }
+
+        private static void WriteBlackHoleCustomInfoFactory(StreamWriter wotWriter, BlackHoleCustomInfoFactory blackHoleCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'BlackHoleCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Magnitude Float {blackHoleCustomInfoFactory.Magnitude:F6}", lvl);
+                wotWriter.WriteLineLevel($"Radius Float {blackHoleCustomInfoFactory.Radius:F6}", lvl);
+                wotWriter.WriteLineLevel($"VortexEffectName String '{blackHoleCustomInfoFactory.VortexEffectName}'", lvl);
+                wotWriter.WriteLineLevel($"AmbientSoundMaxDistance Float {blackHoleCustomInfoFactory.AmbientSoundMaxDistance:F6}", lvl);
+                wotWriter.WriteLineLevel($"AmbientSoundName String '{blackHoleCustomInfoFactory.AmbientSoundName}'", lvl);
+            });
+        }
+
+        private static void WriteEtheriumCurrentCustomInfoFactory(StreamWriter wotWriter, EtheriumCurrentCustomInfoFactory etheriumCurrentCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'EtheriumCurrentCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Magnitude Float {etheriumCurrentCustomInfoFactory.Magnitude:F6}", lvl);
+                wotWriter.WriteLineLevel($"Radius Float {etheriumCurrentCustomInfoFactory.Radius:F6}", lvl);
+            });
+        }
+
+        private static void WriteNebulaCustomInfoFactory(StreamWriter wotWriter, NebulaCustomInfoFactory nebulaCustomInfoFactory)
+        {
+            wotWriter.WriteLine($"FactoryType String 'NebulaCustomInfoFactory'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"Minimum Lightning Spawn Distance From Ships Float {nebulaCustomInfoFactory.MinimumLightningSpawnDistanceFromShips:F6}", lvl);
+                wotWriter.WriteLineLevel($"Minimum Lightning Bolt Length Float {nebulaCustomInfoFactory.MinimumLightningBoltLength:F6}", lvl);
+                wotWriter.WriteLineLevel($"Maximum Lightning Spawn Point Z Amplitude Float {nebulaCustomInfoFactory.MaximumLightningSpawnPointZAmplitude:F6}", lvl);
+                wotWriter.WriteLineLevel($"Meteor Hit Chance Modifier Float {nebulaCustomInfoFactory.MeteorHitChanceModifier:F6}", lvl);
+                wotWriter.WriteSection("Lightning Damage Potential", (lvl1) =>
+                {
+                    WriteDamagePotential(wotWriter, nebulaCustomInfoFactory.LightningDamagePotential, lvl1);
+                }, lvl);
+                wotWriter.WriteSection("Wind Damage Potential", (lvl1) =>
+                {
+                    WriteDamagePotential(wotWriter, nebulaCustomInfoFactory.WindDamagePotential, lvl1);
+                }, lvl);
+                wotWriter.WriteSection("Meteor Damage Potential", (lvl1) =>
+                {
+                    WriteDamagePotential(wotWriter, nebulaCustomInfoFactory.MeteorDamagePotential, lvl1);
+                }, lvl);
+                wotWriter.WriteLineLevel($"NebulaSoundName String '{nebulaCustomInfoFactory.NebulaSoundName}'", lvl);
+                wotWriter.WriteLineLevel($"SolarStormSoundName String '{nebulaCustomInfoFactory.SolarStormSoundName}'", lvl);
+                wotWriter.WriteLineLevel($"MeteorShowerSoundName String '{nebulaCustomInfoFactory.MeteorShowerSoundName}'", lvl);
             });
         }
 
