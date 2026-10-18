@@ -6,7 +6,7 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
 {
     public class AsteroidCustomInfoFactory : CustomInfoDefinition, IDependencyResolvable
     {
-        public int HitPoints { get; set; }
+        public int MaxHitPoints { get; set; }
         public string WorldObjectToCreateUponDeath0Name { get; set; } = string.Empty;
         public string WorldObjectToCreateUponDeath1Name { get; set; } = string.Empty;
         public string WorldObjectToCreateUponDeath2Name { get; set; } = string.Empty;
