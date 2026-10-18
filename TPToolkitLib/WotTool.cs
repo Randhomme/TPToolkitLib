@@ -222,6 +222,7 @@ namespace TPToolkitLib
                 wotWriter.WriteLine("Definition String 'RENDERENTITYDEFINITION'");
                 WriteRenderEntityDefinition(wotWriter, worldObjectType.RenderEntityDefinition);
                 wotWriter.WriteLine("Definition String 'PHYSICSDEFINITION'");
+                WritePhysicsDefinition(wotWriter, worldObjectType.PhysicsDefinition);
             }
         }
 
@@ -372,67 +373,6 @@ namespace TPToolkitLib
                     throw new TPException($"FactoryType '{factoryType}' for 'CUSTOMINFODEFINITION' is invalid.");
             }
             wotReader.ReadLine(); // End section
-        }
-
-        #endregion
-
-        #region Write definitions
-
-        private static void WriteAIEntityDefinition(StreamWriter wotWriter, AiEntityDefinition? aiEntityDefinition)
-        {
-            if (aiEntityDefinition != null)
-            {
-                wotWriter.WriteLine($"EntityType String '{aiEntityDefinition.Type}'");
-                switch (aiEntityDefinition)
-                {
-                    case DragonAI dragonAI:
-                        WriteDragonAI(wotWriter, dragonAI);
-                        break;
-                    case SpaceAnimalAI spaceAnimalAI:
-                        WriteSpaceAnimalAI(wotWriter, spaceAnimalAI);
-                        break;
-                    case SpaceObjectAI spaceObjectAI:
-                        WriteSpaceObjectAI(wotWriter, spaceObjectAI);
-                        break;
-                    case IslandAI islandAI:
-                        WriteIslandAI(wotWriter, islandAI);
-                        break;
-                    case MineAI mineAI:
-                        WriteMineAI(wotWriter, mineAI);
-                        break;
-                    case GunAI gunAI:
-                        WriteGunAI(wotWriter, gunAI);
-                        break;
-                    case VolcanoAI volcanoAI:
-                        WriteVolcanoAI(wotWriter, volcanoAI);
-                        break;
-                    case ShipAI shipAI:
-                        WriteShipAI(wotWriter, shipAI);
-                        break;
-                    default:
-                        throw new TPException($"AIENTITYDEFINITION '{aiEntityDefinition.GetType().Name}' is not a valid factory.");
-                }
-            }
-            else
-                wotWriter.WriteLine("EntityType String ''");
-        }
-
-        private static void WriteRenderEntityDefinition(StreamWriter wotWriter, RenderEntityDefinition? renderEntityDefinition)
-        {
-            if (renderEntityDefinition != null)
-            {
-                wotWriter.WriteLine($"EntityType String '{renderEntityDefinition.Type}'");
-                switch (renderEntityDefinition)
-                {
-                    case RenderEntityFactory renderEntityFactory:
-                        WriteRenderEntityFactory(wotWriter, renderEntityFactory);
-                        break;
-                    default:
-                        throw new TPException($"RENDERENTITYDEFINITION '{renderEntityDefinition.GetType().Name}' is not a valid factory.");
-                }
-            }
-            else
-                wotWriter.WriteLine("EntityType String ''");
         }
 
         #endregion
@@ -1609,7 +1549,104 @@ namespace TPToolkitLib
 
         #endregion
 
-        #region Write AI factories
+        #region Write definitions
+
+        private static void WriteAIEntityDefinition(StreamWriter wotWriter, AiEntityDefinition? aiEntityDefinition)
+        {
+            if (aiEntityDefinition != null)
+            {
+                wotWriter.WriteLine($"EntityType String '{aiEntityDefinition.Type}'");
+                switch (aiEntityDefinition)
+                {
+                    case DragonAI dragonAI:
+                        WriteDragonAI(wotWriter, dragonAI);
+                        break;
+                    case SpaceAnimalAI spaceAnimalAI:
+                        WriteSpaceAnimalAI(wotWriter, spaceAnimalAI);
+                        break;
+                    case SpaceObjectAI spaceObjectAI:
+                        WriteSpaceObjectAI(wotWriter, spaceObjectAI);
+                        break;
+                    case IslandAI islandAI:
+                        WriteIslandAI(wotWriter, islandAI);
+                        break;
+                    case MineAI mineAI:
+                        WriteMineAI(wotWriter, mineAI);
+                        break;
+                    case GunAI gunAI:
+                        WriteGunAI(wotWriter, gunAI);
+                        break;
+                    case VolcanoAI volcanoAI:
+                        WriteVolcanoAI(wotWriter, volcanoAI);
+                        break;
+                    case ShipAI shipAI:
+                        WriteShipAI(wotWriter, shipAI);
+                        break;
+                    default:
+                        throw new TPException($"AIENTITYDEFINITION '{aiEntityDefinition.GetType().Name}' is not a valid factory.");
+                }
+            }
+            else
+                wotWriter.WriteLine("EntityType String ''");
+        }
+
+        private static void WriteRenderEntityDefinition(StreamWriter wotWriter, RenderEntityDefinition? renderEntityDefinition)
+        {
+            if (renderEntityDefinition != null)
+            {
+                wotWriter.WriteLine($"EntityType String '{renderEntityDefinition.Type}'");
+                switch (renderEntityDefinition)
+                {
+                    case RenderEntityFactory renderEntityFactory:
+                        WriteRenderEntityFactory(wotWriter, renderEntityFactory);
+                        break;
+                    default:
+                        throw new TPException($"RENDERENTITYDEFINITION '{renderEntityDefinition.GetType().Name}' is not a valid factory.");
+                }
+            }
+            else
+                wotWriter.WriteLine("EntityType String ''");
+        }
+
+        private static void WritePhysicsDefinition(StreamWriter wotWriter, PhysicsDefinition? physicsDefinition)
+        {
+            if (physicsDefinition != null)
+            {
+                wotWriter.WriteLine($"EntityType String '{physicsDefinition.Type}'");
+                switch (physicsDefinition)
+                {
+                    case DragonPhysics dragonPhysics:
+                        WriteDragonPhysics(wotWriter, dragonPhysics);
+                        break;
+                    case WhalePhysics whalePhysics:
+                        WriteWhalePhysics(wotWriter, whalePhysics);
+                        break;
+                    case SpaceObjectPhysics spaceObjectPhysics:
+                        WriteSpaceObjectPhysics(wotWriter, spaceObjectPhysics);
+                        break;
+                    case ProjectilePhysics projectilePhysics:
+                        WriteProjectilePhysics(wotWriter, projectilePhysics);
+                        break;
+                    case MinePhysics minePhysics:
+                        WriteMinePhysics(wotWriter, minePhysics);
+                        break;
+                    case TorpedoPhysics torpedoPhysics:
+                        WriteTorpedoPhysics(wotWriter, torpedoPhysics);
+                        break;
+                    case ShipDemo shipDemo:
+                        WriteShipDemo(wotWriter, shipDemo);
+                        break;
+                    default:
+                        throw new TPException($"PHYSICSDEFINITION '{physicsDefinition.GetType().Name}' is not a valid factory.");
+                }
+            }
+            else
+                wotWriter.WriteLine("EntityType String ''");
+        }
+
+        #endregion
+
+        #region Write AIEntity factories
 
         private static void WriteDragonAI(StreamWriter wotWriter, DragonAI dragonAI)
         {
@@ -1679,7 +1716,7 @@ namespace TPToolkitLib
 
         #endregion
 
-        #region Write Render factories
+        #region Write RenderEntity factories
 
         private static void WriteRenderEntityFactory(StreamWriter wotWriter, RenderEntityFactory renderEntityFactory)
         {
@@ -1722,7 +1759,7 @@ namespace TPToolkitLib
 
         private static void WriteMeshSubAttribute(StreamWriter wotWriter, MeshSubAttribute meshSubAttribute, int level)
         {
-            wotWriter.WriteSection("MeshAttribute - Element", (Action<int>)((lvl) =>
+            wotWriter.WriteSection("MeshAttribute - Element", (lvl) =>
             {
                 switch (meshSubAttribute)
                 {
@@ -1745,42 +1782,42 @@ namespace TPToolkitLib
                         WritePlayEffect(wotWriter, playEffect, lvl);
                         break;
                     case BoardingEffectPoint boardingEffectPoint:
-                        WriteBoardingEffectPoint(wotWriter, boardingEffectPoint, level);
+                        WriteBoardingEffectPoint(wotWriter, boardingEffectPoint, lvl);
                         break;
                     case VolcanoSmoke volcanoSmoke:
-                        WriteVolcanoSmoke(wotWriter, volcanoSmoke, level);
+                        WriteVolcanoSmoke(wotWriter, volcanoSmoke, lvl);
                         break;
                     case EnginePortPlacement enginePortPlacement:
-                        WriteEnginePortPlacement(wotWriter, enginePortPlacement, level);
+                        WriteEnginePortPlacement(wotWriter, enginePortPlacement, lvl);
                         break;
                     case GunMuzzlePlacement gunMuzzlePlacement:
-                        WriteGunMuzzlePlacement(wotWriter, gunMuzzlePlacement, level);
+                        WriteGunMuzzlePlacement(wotWriter, gunMuzzlePlacement, lvl);
                         break;
                     case GunVerticalPivotPlacement gunVerticalPivotPlacement:
-                        WriteGunVerticalPivotPlacement(wotWriter, gunVerticalPivotPlacement, level);
+                        WriteGunVerticalPivotPlacement(wotWriter, gunVerticalPivotPlacement, lvl);
                         break;
                     case WakePlacement wakePlacement:
-                        WriteWakePlacement(wotWriter, wakePlacement, level);
+                        WriteWakePlacement(wotWriter, wakePlacement, lvl);
                         break;
                     case ToweePoint toweePoint:
-                        WriteToweePoint(wotWriter, toweePoint, level);
+                        WriteToweePoint(wotWriter, toweePoint, lvl);
                         break;
                     case TowerPoint towerPoint:
-                        WriteTowerPoint(wotWriter, towerPoint, level);
+                        WriteTowerPoint(wotWriter, towerPoint, lvl);
                         break;
                     case TorpedoHomingPoint torpedoHomingPoint:
-                        WriteTorpedoHomingPoint(wotWriter, torpedoHomingPoint, level);
+                        WriteTorpedoHomingPoint(wotWriter, torpedoHomingPoint, lvl);
                         break;
                     case CloakingEffectPoint cloakingEffectPoint:
-                        WriteCloakingEffectPoint(wotWriter, cloakingEffectPoint, level);
+                        WriteCloakingEffectPoint(wotWriter, cloakingEffectPoint, lvl);
                         break;
                     case FullyCloakedEffectPoint fullyCloakedEffectPoint:
-                        WriteFullyCloakedEffectPoint(wotWriter, fullyCloakedEffectPoint, level);
+                        WriteFullyCloakedEffectPoint(wotWriter, fullyCloakedEffectPoint, lvl);
                         break;
                     default:
                         throw new TPException($"'{meshSubAttribute.GetType().Name}' is not a valid mesh attribute.");
                 }
-            }), level);
+            }, level);
         }
 
         private static void WriteGunPlacement(StreamWriter wotWriter, GunPlacement gunPlacement, int level)
@@ -1925,6 +1962,101 @@ namespace TPToolkitLib
             wotWriter.WriteLineLevel("AttributeName String 'FullyCloakedEffectPoint'", level);
             wotWriter.WriteLineLevel($"DescriptorName String '{fullyCloakedEffectPoint.DescriptorName}'", level);
             wotWriter.WriteLineLevel($"AssociationName String ''", level);
+        }
+
+        #endregion
+
+        #region Write Physics factories
+
+        private static void WriteDragonPhysics(StreamWriter wotWriter, DragonPhysics dragonPhysics)
+        {
+            wotWriter.WriteLine($"FactoryType String 'DragonPhysics'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"CenterOfMass Vector3( {dragonPhysics.CenterOfMass.X:F6}, {dragonPhysics.CenterOfMass.Y:F6}, {dragonPhysics.CenterOfMass.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Mass Float {dragonPhysics.Mass:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxThrust Float {dragonPhysics.MaxThrust:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxSpeed Float {dragonPhysics.MaxSpeed:F6}", lvl);
+                wotWriter.WriteLineLevel($"RotationalFriction Float {dragonPhysics.RotationalFriction:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxAngularAcceleration Float {dragonPhysics.MaxAngularAcceleration:F6}", lvl);
+            });
+        }
+
+        private static void WriteWhalePhysics(StreamWriter wotWriter, WhalePhysics whalePhysics)
+        {
+            wotWriter.WriteLine($"FactoryType String 'Whale Physics'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"CenterOfMass Vector3( {whalePhysics.CenterOfMass.X:F6}, {whalePhysics.CenterOfMass.Y:F6}, {whalePhysics.CenterOfMass.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Mass Float {whalePhysics.Mass:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxThrust Float {whalePhysics.MaxThrust:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxSpeed Float {whalePhysics.MaxSpeed:F6}", lvl);
+                wotWriter.WriteLineLevel($"RotationalFriction Float {whalePhysics.RotationalFriction:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxAngularAcceleration Float {whalePhysics.MaxAngularAcceleration:F6}", lvl);
+                wotWriter.WriteLineLevel($"Max Dive Pitch Float {whalePhysics.MaxDivePitch:F6}", lvl);
+                wotWriter.WriteLineLevel($"Max Climb Pitch Float {whalePhysics.MaxClimbPitch:F6}", lvl);
+                wotWriter.WriteLineLevel($"Dive Time Float {whalePhysics.DiveTime:F6}", lvl);
+            });
+        }
+
+        private static void WriteSpaceObjectPhysics(StreamWriter wotWriter, SpaceObjectPhysics spaceObjectPhysics)
+        {
+            wotWriter.WriteLine($"FactoryType String 'SpaceObjectPhysics'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"CenterOfMass Vector3( {spaceObjectPhysics.CenterOfMass.X:F6}, {spaceObjectPhysics.CenterOfMass.Y:F6}, {spaceObjectPhysics.CenterOfMass.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Mass Float {spaceObjectPhysics.Mass:F6}", lvl);
+                wotWriter.WriteLineLevel($"Acceleration Float {spaceObjectPhysics.Acceleration:F6}", lvl);
+            });
+        }
+
+        private static void WriteProjectilePhysics(StreamWriter wotWriter, ProjectilePhysics projectilePhysics)
+        {
+            wotWriter.WriteLine($"FactoryType String 'ProjectilePhysics'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"CenterOfMass Vector3( {projectilePhysics.CenterOfMass.X:F6}, {projectilePhysics.CenterOfMass.Y:F6}, {projectilePhysics.CenterOfMass.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Mass Float {projectilePhysics.Mass:F6}", lvl);
+            });
+        }
+
+        private static void WriteMinePhysics(StreamWriter wotWriter, MinePhysics minePhysics)
+        {
+            wotWriter.WriteLine($"FactoryType String 'MinePhysics'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"CenterOfMass Vector3( {minePhysics.CenterOfMass.X:F6}, {minePhysics.CenterOfMass.Y:F6}, {minePhysics.CenterOfMass.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Mass Float {minePhysics.Mass:F6}", lvl);
+                wotWriter.WriteLineLevel($"Maximum speed Float {minePhysics.MaximumSpeed:F6}", lvl);
+            });
+        }
+
+        private static void WriteTorpedoPhysics(StreamWriter wotWriter, TorpedoPhysics torpedoPhysics)
+        {
+            wotWriter.WriteLine($"FactoryType String 'TorpedoPhysics'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"CenterOfMass Vector3( {torpedoPhysics.CenterOfMass.X:F6}, {torpedoPhysics.CenterOfMass.Y:F6}, {torpedoPhysics.CenterOfMass.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Mass Float {torpedoPhysics.Mass:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxThrust Float {torpedoPhysics.MaxThrust:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxSpeed Float {torpedoPhysics.MaxSpeed:F6}", lvl);
+                wotWriter.WriteLineLevel($"RotationalFriction Float {torpedoPhysics.RotationalFriction:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxAngularAcceleration Float {torpedoPhysics.MaxAngularAcceleration:F6}", lvl);
+            });
+        }
+
+        private static void WriteShipDemo(StreamWriter wotWriter, ShipDemo shipDemo)
+        {
+            wotWriter.WriteLine($"FactoryType String 'ShipDemo'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"CenterOfMass Vector3( {shipDemo.CenterOfMass.X:F6}, {shipDemo.CenterOfMass.Y:F6}, {shipDemo.CenterOfMass.Z:F6} )", lvl);
+                wotWriter.WriteLineLevel($"Mass Float {shipDemo.Mass:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxThrust Float {shipDemo.MaxThrust:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxSpeed Float {shipDemo.MaxSpeed:F6}", lvl);
+                wotWriter.WriteLineLevel($"RotationalFriction Float {shipDemo.RotationalFriction:F6}", lvl);
+                wotWriter.WriteLineLevel($"MaxAngularAcceleration Float {shipDemo.MaxAngularAcceleration:F6}", lvl);
+            });
         }
 
         #endregion
