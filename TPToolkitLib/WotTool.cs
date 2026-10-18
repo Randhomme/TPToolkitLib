@@ -223,6 +223,8 @@ namespace TPToolkitLib
                 WriteRenderEntityDefinition(wotWriter, worldObjectType.RenderEntityDefinition);
                 wotWriter.WriteLine("Definition String 'PHYSICSDEFINITION'");
                 WritePhysicsDefinition(wotWriter, worldObjectType.PhysicsDefinition);
+                wotWriter.WriteLine("Definition String 'COLLISIONDEFINITION'");
+                WriteCollisionDefinition(wotWriter, worldObjectType.CollisionDefinition);
             }
         }
 
@@ -1644,6 +1646,30 @@ namespace TPToolkitLib
                 wotWriter.WriteLine("EntityType String ''");
         }
 
+        private static void WriteCollisionDefinition(StreamWriter wotWriter, CollisionDefinition? collisionDefinition)
+        {
+            if (collisionDefinition != null)
+            {
+                wotWriter.WriteLine($"EntityType String '{collisionDefinition.Type}'");
+                switch (collisionDefinition)
+                {
+                    case BoundingRenderEntity boundingRenderEntity:
+                        WriteBoundingRenderEntity(wotWriter, boundingRenderEntity);
+                        break;
+                    case Point point:
+                        WritePoint(wotWriter, point);
+                        break;
+                    case BoundingSphere boundingSphere:
+                        WriteBoundingSphere(wotWriter, boundingSphere);
+                        break;
+                    default:
+                        throw new TPException($"COLLISIONDEFINITION '{collisionDefinition.GetType().Name}' is not a valid factory.");
+                }
+            }
+            else
+                wotWriter.WriteLine("EntityType String ''");
+        }
+
         #endregion
 
         #region Write AIEntity factories
@@ -2056,6 +2082,58 @@ namespace TPToolkitLib
                 wotWriter.WriteLineLevel($"MaxSpeed Float {shipDemo.MaxSpeed:F6}", lvl);
                 wotWriter.WriteLineLevel($"RotationalFriction Float {shipDemo.RotationalFriction:F6}", lvl);
                 wotWriter.WriteLineLevel($"MaxAngularAcceleration Float {shipDemo.MaxAngularAcceleration:F6}", lvl);
+            });
+        }
+
+        #endregion
+
+        #region Write Collision factories
+
+        private static void WriteBoundingRenderEntity(StreamWriter wotWriter, BoundingRenderEntity boundingRenderEntity)
+        {
+            wotWriter.WriteLine($"FactoryType String 'BoundingRenderEntity'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"DetectionType String '{boundingRenderEntity.DetectionType.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"ResponseType String '{boundingRenderEntity.ResponseType.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"User defined sphere size Bool {boundingRenderEntity.UserDefinedSphereSize}", lvl);
+                if (boundingRenderEntity.UserDefinedSphereSize)
+                {
+                    wotWriter.WriteLineLevel($"LocalPosition Vector3( {boundingRenderEntity.LocalPosition.X:F6}, {boundingRenderEntity.LocalPosition.Y:F6}, {boundingRenderEntity.LocalPosition.Z:F6} )", lvl);
+                    wotWriter.WriteLineLevel($"Radius Float {boundingRenderEntity.Radius:F6}", lvl);
+                }
+                wotWriter.WriteLineLevel($"UserDefinedBoundingBoxExtents Bool {boundingRenderEntity.UserDefinedBoundingBoxExtents}", lvl);
+                if (boundingRenderEntity.UserDefinedBoundingBoxExtents)
+                {
+                    wotWriter.WriteLineLevel($"MinExtents Vector3( {boundingRenderEntity.MinExtents.X:F6}, {boundingRenderEntity.MinExtents.Y:F6}, {boundingRenderEntity.MinExtents.Z:F6} )", lvl);
+                    wotWriter.WriteLineLevel($"MaxExtents Vector3( {boundingRenderEntity.MaxExtents.X:F6}, {boundingRenderEntity.MaxExtents.Y:F6}, {boundingRenderEntity.MaxExtents.Z:F6} )", lvl);
+                }
+            });
+        }
+
+        private static void WritePoint(StreamWriter wotWriter, Point point)
+        {
+            wotWriter.WriteLine($"FactoryType String 'Point'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"DetectionType String '{point.DetectionType.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"ResponseType String '{point.ResponseType.GetName()}'", lvl);
+            });
+        }
+
+        private static void WriteBoundingSphere(StreamWriter wotWriter, BoundingSphere boundingSphere)
+        {
+            wotWriter.WriteLine($"FactoryType String 'BoundingSphere'");
+            wotWriter.WriteSection("ConstData", (lvl) =>
+            {
+                wotWriter.WriteLineLevel($"DetectionType String '{boundingSphere.DetectionType.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"ResponseType String '{boundingSphere.ResponseType.GetName()}'", lvl);
+                wotWriter.WriteLineLevel($"User defined sphere size Bool {boundingSphere.UserDefinedSphereSize}", lvl);
+                if (boundingSphere.UserDefinedSphereSize)
+                {
+                    wotWriter.WriteLineLevel($"LocalPosition Vector3( {boundingSphere.LocalPosition.X:F6}, {boundingSphere.LocalPosition.Y:F6}, {boundingSphere.LocalPosition.Z:F6} )", lvl);
+                    wotWriter.WriteLineLevel($"Radius Float {boundingSphere.Radius:F6}", lvl);
+                }
             });
         }
 
