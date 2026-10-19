@@ -15,7 +15,7 @@
         public string WorldObjectFilesDirectory { get; set; } = string.Empty;
         #endregion
         #region Strings.ini
-        public string GameHeaderFiles { get; set; } = string.Empty;
+        public string GameHeaderFilesDirectory { get; set; } = string.Empty;
         public string GameStringsEnglish { get; set; } = string.Empty;
         #endregion
     }
