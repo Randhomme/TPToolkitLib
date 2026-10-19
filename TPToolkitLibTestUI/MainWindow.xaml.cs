@@ -28,7 +28,7 @@ namespace TPToolkitLibUITest
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
             InitializeComponent();
-            //SelectTPGameFolder();
+            SelectTPGameFolder();
         }
 
         private void SelectTPGameFolder()
