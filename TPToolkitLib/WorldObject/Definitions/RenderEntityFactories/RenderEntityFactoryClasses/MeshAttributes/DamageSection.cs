@@ -22,7 +22,7 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
         public int VitalSectionCoreDamagePercent { get; set; } = -1;
         public IList<Critical> Criticals { get; } = [];
         public IList<string> Adjacents { get; } = [];
-        public IList<MsbElement> AdjacentElements { get; } = [];
+        public IList<MsbMesh> AdjacentElements { get; } = [];
         public string DebrisMeshScene { get; set; } = string.Empty;
         public MsbScene? DebrisMsbScene { get; set; }
         public string DebrisFx { get; set; } = string.Empty;

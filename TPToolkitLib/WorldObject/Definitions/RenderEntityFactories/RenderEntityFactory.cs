@@ -43,7 +43,7 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
                                 for(int k = 0; k < damageSection.Adjacents.Count; k++)
                                 {
                                     var adjacentName = damageSection.Adjacents[k];
-                                    var adjacentElement = GetMsbElementFromMsbScene(MeshScene, adjacentName);
+                                    var adjacentElement = GetMsbMeshFromMsbScene(MeshScene, adjacentName);
                                     if (adjacentElement != null)
                                         damageSection.AdjacentElements.Add(adjacentElement);
                                 }
@@ -68,6 +68,17 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
             {
                 var msbMesh = msbScene.MsbMeshes[i];
                 if (msbMesh.Name.Equals(elementName, StringComparison.OrdinalIgnoreCase))
+                    return msbMesh;
+            }
+            return null;
+        }
+
+        private MsbMesh? GetMsbMeshFromMsbScene(MsbScene msbScene, string meshName)
+        {
+            for (int i = 0; i < msbScene.MsbMeshes.Count; i++)
+            {
+                var msbMesh = msbScene.MsbMeshes[i];
+                if (msbMesh.Name.Equals(meshName, StringComparison.OrdinalIgnoreCase))
                     return msbMesh;
             }
             return null;
