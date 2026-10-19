@@ -12,15 +12,12 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
     {
         public bool Distant { get; set; }
         public bool Visible { get; set; }
-        public IList<MeshAttribute> MeshAttributes { get; }
+        public IList<MeshAttribute> MeshAttributes { get; } = [];
         public float RotationSpeed { get; set; }
         public string MeshSceneName { get; set; } = string.Empty;
         public MsbScene? MeshScene { get; set; }
         public string RenderEffectName { get; set; } = string.Empty;
-        public RenderEntityFactory(string type) : base(type)
-        {
-            MeshAttributes = [];
-        }
+        public RenderEntityFactory(string type) : base(type) { }
 
         public void ResolveDependency()
         {
@@ -48,8 +45,6 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
                                         damageSection.AdjacentElements.Add(adjacentElement);
                                 }
                                 break;
-                            default:
-                                throw new NotImplementedException($"MeshSubAttribute type {meshSubAttribute.GetType().Name} is not implemented.");
                         }
                     }
                 }
