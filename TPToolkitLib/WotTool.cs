@@ -35,7 +35,11 @@ namespace TPToolkitLib
             WriteWot(worldObjectType, wotFilePath);
         }
 
-        public static void ResolveDependencies()
+        #endregion
+
+        #region Internal methods
+
+        internal static void ResolveDependencies()
         {
             for (int i = 0; i < dependencyResolvables.Count; i++)
             {
