@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
+using System.Text;
 using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.WorldObject;
 
@@ -12,15 +15,18 @@ namespace TPToolkitLib
         private static readonly List<string> effects = [];
         private static readonly List<string> meshes = [];
         private static readonly List<string> renderEffects = [];
+        private static readonly List<TPGameHeaderStrings> tpGameHeaderStrings = [];
         public static IReadOnlyList<WorldObjectType> WorldObjects { get => worldObjects; }
         public static IReadOnlyList<MsbScene> MeshScenes { get => meshScenes; }
         public static IReadOnlyList<string> Effects { get => effects; }
         public static IReadOnlyList<string> Meshes { get => meshes; }
         public static IReadOnlyList<string> RenderEffects { get => renderEffects; }
+        public static IReadOnlyList<TPGameHeaderStrings> TPGameHeaderStrings { get => tpGameHeaderStrings; }
 
         public static void LoadTPGameFolder(string tpGameDirectory, bool ignoreFormatError = false)
         {
             var tpAppSettings = ReadAppSettingsAndStrings(tpGameDirectory);
+            LoadStrings(tpAppSettings.GameStringsEnglish, tpAppSettings.GameHeaderFilesDirectory);
             LoadEffects(tpAppSettings.EffectsDirectory);
             LoadMeshes(tpAppSettings.MeshesDirectory);
             LoadRenderEffects(tpAppSettings.RenderEffectsDirectory);
@@ -101,7 +107,7 @@ namespace TPToolkitLib
                         var line = reader.ReadLine();
                         if (line.StartsWith("Game Header Files:"))
                         {
-                            tpAppSettings.GameHeaderFiles = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("Game Header Files:".Length).Trim()); ;
+                            tpAppSettings.GameHeaderFilesDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("Game Header Files:".Length).Trim()); ;
                         }
                         else if (line.StartsWith("Game Strings - English:"))
                         {
@@ -114,13 +120,70 @@ namespace TPToolkitLib
                 throw new FileNotFoundException("Strings.ini file not found in the selected folder.", stringsSettingsFile);
         }
 
+        private static void LoadStrings(string gameStringsEnglish, string gameHeaderFilesDirectory)
+        {
+            var gameStrings = LoadBaseStrings(gameStringsEnglish);
+            LoadGameHeaderFiles(gameHeaderFilesDirectory, gameStrings);
+        }
+
+        private static Dictionary<string, string> LoadBaseStrings(string gameStringsEnglish)
+        {
+            var gameStrings = new Dictionary<string, string>();
+            if (File.Exists(gameStringsEnglish))
+            {
+                using (var reader = new StreamReader(File.OpenRead(gameStringsEnglish), Encoding.GetEncoding("Windows-1252")))
+                {
+                    string key, value;
+                    while ((key = reader.ReadLine()) != null)
+                    {
+                        if (string.IsNullOrEmpty(key) || key.StartsWith("\"") || key.EndsWith("\"") || key.StartsWith("//"))
+                            continue;
+                        if ((value = reader.ReadLine()) != null && (value = value.Trim('"')) != null)
+                            gameStrings[key] = value;
+                        else
+                            gameStrings[key] = key;
+                    }
+                }
+            }
+            else
+                throw new FileNotFoundException($"Game strings file '{gameStringsEnglish}' does not exist.");
+            return gameStrings;
+        }
+
+        private static void LoadGameHeaderFiles(string gameHeaderFilesDirectory, Dictionary<string, string> gameStrings)
+        {
+            var gameHeaderFiles = Directory.GetFiles(gameHeaderFilesDirectory, "*.h");
+            for (int i = 0; i < gameHeaderFiles.Length; i++)
+            {
+                var gameHeaderFile = gameHeaderFiles[i];
+                var tpghs = new TPGameHeaderStrings() { GameHeaderFile = Path.GetFileName(gameHeaderFile) };
+                using (var reader = new StreamReader(File.OpenRead(gameHeaderFile)))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        var line = reader.ReadLine();
+                        if (line.StartsWith("#define"))
+                        {
+                            var key = line.Substring(8).Split(' ')[0]; // 8 is the length of "#define "
+                            if (gameStrings.TryGetValue(key, out var valueString))
+                            {
+                                tpghs.Strings[key] = valueString;
+                            }
+                        }
+                    }
+                    
+                }
+                tpGameHeaderStrings.Add(tpghs);
+            }
+        }
+
         private static void LoadWorldObjects(string worldObjectDirectory, bool ignoreFormatError)
         {
             var wotFiles = Directory.GetFiles(worldObjectDirectory, "*.wot");
             for (int i = 0; i < wotFiles.Length; i++)
             {
-                var msbFile = wotFiles[i];
-                worldObjects.Add(WotTool.WorldObjectFromWot(msbFile, ignoreFormatError));
+                var wotFile = wotFiles[i];
+                worldObjects.Add(WotTool.WorldObjectFromWot(wotFile, ignoreFormatError));
             }
             WotTool.ResolveDependencies();
         }
