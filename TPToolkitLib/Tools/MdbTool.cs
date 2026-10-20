@@ -13,7 +13,7 @@ using TPToolkitLib.Mesh.Classes;
 using TPToolkitLib.Mesh.Structs;
 using TPToolkitLib.Utils;
 
-namespace TPToolkitLib
+namespace TPToolkitLib.Tools
 {
     public static class MdbTool
     {

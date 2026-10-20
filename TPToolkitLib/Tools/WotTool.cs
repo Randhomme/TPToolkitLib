@@ -17,7 +17,7 @@ using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses.MeshAttributes;
 
-namespace TPToolkitLib
+namespace TPToolkitLib.Tools
 {
     public static class WotTool
     {

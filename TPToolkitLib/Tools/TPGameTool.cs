@@ -4,9 +4,10 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Text;
 using TPToolkitLib.MeshScene.Classes;
+using TPToolkitLib.TPSettings;
 using TPToolkitLib.WorldObject;
 
-namespace TPToolkitLib
+namespace TPToolkitLib.Tools
 {
     public static class TPGameTool
     {

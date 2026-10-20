@@ -1,4 +1,4 @@
-﻿namespace TPToolkitLib
+﻿namespace TPToolkitLib.TPSettings
 {
     internal class TPAppSettings
     {

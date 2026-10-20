@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace TPToolkitLib
+namespace TPToolkitLib.TPSettings
 {
     /// <summary>
     /// Links a game header file to a string dictionnary, containing the strings in the game header file

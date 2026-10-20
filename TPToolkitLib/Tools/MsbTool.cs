@@ -4,7 +4,7 @@ using System.Text;
 using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.MeshScene.Enums;
 
-namespace TPToolkitLib
+namespace TPToolkitLib.Tools
 {
     public static class MsbTool
     {

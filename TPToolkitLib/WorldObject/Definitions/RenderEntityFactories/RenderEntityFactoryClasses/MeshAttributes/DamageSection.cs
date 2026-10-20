@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using TPToolkitLib.Enums;
 using TPToolkitLib.Interfaces;
 using TPToolkitLib.MeshScene.Classes;
+using TPToolkitLib.Tools;
 
 namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses.MeshAttributes
 {
