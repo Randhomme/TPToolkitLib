@@ -17,16 +17,31 @@ namespace TPToolkitLib.Tools
 {
     public static class MdbTool
     {
+        public static void XMdbTo1Obj(string[] mdbFilePaths, string objFilePath, bool lods)
+        {
+            XMdbTo1Obj(mdbFilePaths, objFilePath, TPGameTool.TPAppSettings.MeshTexturesDirectory, lods);
+        }
+
         public static void XMdbTo1Obj(string[] mdbFilePaths, string objFilePath, string textureDirectory, bool lods)
         {
             var meshes = MeshesFromMdbs(mdbFilePaths, lods);
             MeshesToObj(meshes, objFilePath, textureDirectory);
         }
 
+        public static void XMdbTo1Glb(string[] mdbFilePaths, string glbFilePath, bool lods)
+        {
+            XMdbTo1Glb(mdbFilePaths, glbFilePath, TPGameTool.TPAppSettings.MeshTexturesDirectory, lods);
+        }
+
         public static void XMdbTo1Glb(string[] mdbFilePaths, string glbFilePath, string textureDirectory, bool lods)
         {
             var meshes = MeshesFromMdbs(mdbFilePaths, lods);
             MeshesToGlb(meshes, glbFilePath, textureDirectory);
+        }
+
+        public static void XMdbToXObj(string[] mdbFilePaths, string objFolderPath, bool lods)
+        {
+            XMdbToXObj(mdbFilePaths, objFolderPath, TPGameTool.TPAppSettings.MeshTexturesDirectory, lods);
         }
 
         public static void XMdbToXObj(string[] mdbFilePaths, string objFolderPath, string textureDirectory, bool lods)
@@ -38,6 +53,11 @@ namespace TPToolkitLib.Tools
                 string objFilePath = Path.Combine(objFolderPath, Path.ChangeExtension(mesh.GroupName, "obj"));
                 MeshToObj(mesh, objFilePath, textureDirectory);
             }
+        }
+
+        public static void XMdbToXGlb(string[] mdbFilePaths, string glbFolderPath, bool lods)
+        {
+            XMdbToXGlb(mdbFilePaths, glbFolderPath, TPGameTool.TPAppSettings.MeshTexturesDirectory, lods);
         }
 
         public static void XMdbToXGlb(string[] mdbFilePaths, string glbFolderPath, string textureDirectory, bool lods)
