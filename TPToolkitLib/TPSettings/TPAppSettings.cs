@@ -9,6 +9,7 @@
         public string GuiTexturesDirectory { get; set; } = string.Empty;
         public string MeshesDirectory { get; set; } = string.Empty;
         public string MeshScenesDirectory { get; set; } = string.Empty;
+        public string MeshTexturesDirectory { get; set; } = string.Empty;
         public string RenderEffectsDirectory { get; set; } = string.Empty;
         public string SoundDirectory { get; set; } = string.Empty;
         public string WorldFilesDirectory { get; set; } = string.Empty;
