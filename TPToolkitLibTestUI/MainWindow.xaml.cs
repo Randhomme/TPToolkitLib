@@ -54,11 +54,11 @@ namespace TPToolkitLibUITest
             {
                 if (sfd.FilterIndex == 1) // glb
                 {
-                    MdbTool.XMdbTo1Glb(ofd.FileNames, sfd.FileName, "C:\\Users\\User0\\Documents\\Desktop\\TreasurePlanet\\TP_Game_ORIGINAL\\BD_Textures", true);
+                    MdbTool.XMdbTo1Glb(ofd.FileNames, sfd.FileName, true);
                 }
                 else // obj
                 {
-                    MdbTool.XMdbTo1Obj(ofd.FileNames, sfd.FileName, "C:\\Users\\User0\\Documents\\Desktop\\TreasurePlanet\\TP_Game_ORIGINAL\\BD_Textures", true);
+                    MdbTool.XMdbTo1Obj(ofd.FileNames, sfd.FileName, true);
                 }
             }
         }
@@ -75,12 +75,12 @@ namespace TPToolkitLibUITest
             };
             var sfbd = new WF.FolderBrowserDialog()
             {
-                Description = "Select the TPGame folder",
+                Description = "Select a folder to export your files",
                 ShowNewFolderButton = false,
             };
             if (ofd.ShowDialog() == true && sfbd.ShowDialog() == WF.DialogResult.OK)
             {
-                MdbTool.XMdbToXObj(ofd.FileNames, sfbd.SelectedPath, "C:\\Users\\User0\\Documents\\Desktop\\TreasurePlanet\\TP_Game_ORIGINAL\\BD_Textures", true);
+                MdbTool.XMdbToXObj(ofd.FileNames, sfbd.SelectedPath, true);
             }
         }
 
@@ -96,12 +96,12 @@ namespace TPToolkitLibUITest
             };
             var sfbd = new WF.FolderBrowserDialog()
             {
-                Description = "Select a folder to export",
+                Description = "Select a folder to export your files",
                 ShowNewFolderButton = false,
             };
             if (ofd.ShowDialog() == true && sfbd.ShowDialog() == WF.DialogResult.OK)
             {
-                MdbTool.XMdbToXGlb(ofd.FileNames, sfbd.SelectedPath, "C:\\Users\\User0\\Documents\\Desktop\\TreasurePlanet\\TP_Game_ORIGINAL\\BD_Textures", true);
+                MdbTool.XMdbToXGlb(ofd.FileNames, sfbd.SelectedPath, true);
             }
         }
 
@@ -117,7 +117,7 @@ namespace TPToolkitLibUITest
             };
             var sfbd = new WF.FolderBrowserDialog()
             {
-                Description = "Select a folder to export",
+                Description = "Select a folder to export your files",
                 ShowNewFolderButton = false,
             };
             if (ofd.ShowDialog() == true && sfbd.ShowDialog() == WF.DialogResult.OK)
@@ -214,7 +214,7 @@ namespace TPToolkitLibUITest
             }
         }
 
-        // Open wot folder
+        // Open wot folder and export everything into WorldObjects/Exported
         private void Button_Click_8(object sender, RoutedEventArgs e)
         {
             var ofbd = new WF.FolderBrowserDialog()
