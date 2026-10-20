@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TPToolkitLib.Interfaces;
+﻿using System.Collections.Generic;
 using TPToolkitLib.MeshScene.Classes;
 
 namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses
@@ -11,10 +6,22 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
     public class MeshAttribute
     {
         public string MeshName { get; set; } = string.Empty;
+        private MsbElement? mesh;
         /// <summary>
         /// The MsbElement that corresponds to this MeshAttribute's MeshName. This is resolved after the MsbScene is loaded and the MeshName is matched to an element in the scene.
         /// </summary>
-        public MsbElement? Mesh { get; set; }
+        public MsbElement? Mesh
+        {
+            get => mesh;
+            set
+            {
+                mesh = value;
+                if (value != null)
+                    MeshName = value.Name;
+                else
+                    MeshName = string.Empty;
+            }
+        }
         public IList<MeshSubAttribute> MeshSubAttributes { get; } = [];
     }
 }

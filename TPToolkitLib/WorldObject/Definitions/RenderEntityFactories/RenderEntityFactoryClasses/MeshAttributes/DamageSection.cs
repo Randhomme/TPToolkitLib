@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using TPToolkitLib.Enums;
 using TPToolkitLib.Interfaces;
 using TPToolkitLib.MeshScene.Classes;
@@ -23,6 +20,9 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
         public int VitalSectionCoreDamagePercent { get; set; } = -1;
         public IList<Critical> Criticals { get; } = [];
         public IList<string> Adjacents { get; } = [];
+        /// <summary>
+        /// Resolved by RenderEntityFactory
+        /// </summary>
         public IList<MsbMesh> AdjacentElements { get; } = [];
         public string DebrisMeshScene { get; set; } = string.Empty;
         public MsbScene? DebrisMsbScene { get; set; }

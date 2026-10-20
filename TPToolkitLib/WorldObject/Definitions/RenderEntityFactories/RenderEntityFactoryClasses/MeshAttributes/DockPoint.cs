@@ -5,6 +5,18 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
     public class DockPoint : MeshSubAttribute
     {
         public string AnimationName { get; set; } = string.Empty;
-        public MsbAnimation? Animation { get; set; }
+        private MsbAnimation? animation;
+        public MsbAnimation? Animation
+        {
+            get => animation;
+            set
+            {
+                animation = value;
+                if (value != null)
+                    AnimationName = value.Name;
+                else
+                    AnimationName = string.Empty;
+            }
+        }
     }
 }

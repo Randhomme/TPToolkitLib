@@ -16,7 +16,19 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
         public IList<MeshAttribute> MeshAttributes { get; } = [];
         public float RotationSpeed { get; set; }
         public string MeshSceneName { get; set; } = string.Empty;
-        public MsbScene? MeshScene { get; set; }
+        private MsbScene? meshScene;
+        public MsbScene? MeshScene
+        {
+            get => meshScene;
+            set
+            {
+                meshScene = value;
+                if (value != null)
+                    MeshSceneName = value.Name;
+                else
+                    MeshSceneName = string.Empty;
+            }
+        }
         public string RenderEffectName { get; set; } = string.Empty;
         public RenderEntityFactory(string type) : base(type) { }
 

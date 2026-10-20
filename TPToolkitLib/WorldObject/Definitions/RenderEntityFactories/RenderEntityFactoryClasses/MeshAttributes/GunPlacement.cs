@@ -9,7 +9,19 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
     public class GunPlacement : MeshSubAttribute, IDependencyResolvable
     {
         public string GunName { get; set; } = string.Empty;
-        public WorldObjectType? Gun { get; set; }
+        private WorldObjectType? gun;
+        public WorldObjectType? Gun
+        {
+            get => gun;
+            set
+            {
+                gun = value;
+                if (value != null)
+                    GunName = value.Type;
+                else
+                    GunName = string.Empty;
+            }
+        }
         public float MaxRotation { get; set; }
         public Bank Bank { get; set; }
 
