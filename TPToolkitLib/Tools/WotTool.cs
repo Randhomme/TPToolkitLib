@@ -506,6 +506,7 @@ namespace TPToolkitLib.Tools
                     case "DamageSection":
                         var damageSection = ReadDamageSection(wotReader, meshAttribute);
                         meshAttribute.MeshSubAttributes.Add(damageSection);
+                        dependencyResolvables.Add(damageSection);
                         break;
                     case "MeshHitPoints":
                         var meshHitPoints = ReadMeshHitPoints(wotReader);
