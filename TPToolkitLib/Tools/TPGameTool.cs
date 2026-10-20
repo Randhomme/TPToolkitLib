@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using TPToolkitLib.MeshScene.Classes;
@@ -17,6 +15,7 @@ namespace TPToolkitLib.Tools
         private static readonly List<string> meshes = [];
         private static readonly List<string> renderEffects = [];
         private static readonly List<TPGameHeaderStrings> tpGameHeaderStrings = [];
+        internal static TPAppSettings TPAppSettings { get; } = new();
         public static IReadOnlyList<WorldObjectType> WorldObjects { get => worldObjects; }
         public static IReadOnlyList<MsbScene> MeshScenes { get => meshScenes; }
         public static IReadOnlyList<string> Effects { get => effects; }
@@ -26,26 +25,25 @@ namespace TPToolkitLib.Tools
 
         public static void LoadTPGameFolder(string tpGameDirectory, bool ignoreFormatError = false)
         {
-            var tpAppSettings = ReadAppSettingsAndStrings(tpGameDirectory);
-            LoadStrings(tpAppSettings.GameStringsEnglish, tpAppSettings.GameHeaderFilesDirectory);
-            LoadEffects(tpAppSettings.EffectsDirectory);
-            LoadMeshes(tpAppSettings.MeshesDirectory);
-            LoadRenderEffects(tpAppSettings.RenderEffectsDirectory);
-            LoadMeshScenes(tpAppSettings.MeshScenesDirectory);
-            LoadWorldObjects(tpAppSettings.WorldObjectFilesDirectory, ignoreFormatError);
+            ReadAppSettingsAndStrings(tpGameDirectory);
+            LoadStrings(TPAppSettings.GameStringsEnglish, TPAppSettings.GameHeaderFilesDirectory);
+            LoadEffects(TPAppSettings.EffectsDirectory);
+            LoadMeshes(TPAppSettings.MeshesDirectory);
+            LoadRenderEffects(TPAppSettings.RenderEffectsDirectory);
+            LoadMeshScenes(TPAppSettings.MeshScenesDirectory);
+            LoadWorldObjects(TPAppSettings.WorldObjectFilesDirectory, ignoreFormatError);
         }
 
-        private static TPAppSettings ReadAppSettingsAndStrings(string tpGameDirectory)
+        private static void ReadAppSettingsAndStrings(string tpGameDirectory)
         {
-            var tpAppSettings = new TPAppSettings() { TPGameDirectory = tpGameDirectory };
-            ReadAppSettings(tpAppSettings);
-            ReadStrings(tpAppSettings);
-            return tpAppSettings;
+            TPAppSettings.TPGameDirectory = tpGameDirectory;
+            ReadAppSettings();
+            ReadStrings();
         }
 
-        private static void ReadAppSettings(TPAppSettings tpAppSettings)
+        private static void ReadAppSettings()
         {
-            var appSettingsFile = Path.Combine(tpAppSettings.TPGameDirectory, "AppSettings.ini");
+            var appSettingsFile = Path.Combine(TPAppSettings.TPGameDirectory, "AppSettings.ini");
             if (File.Exists(appSettingsFile))
             {
                 using (var reader = new StreamReader(File.OpenRead(appSettingsFile)))
@@ -55,39 +53,43 @@ namespace TPToolkitLib.Tools
                         var line = reader.ReadLine();
                         if (line.StartsWith("SOUND DIRECTORY:"))
                         {
-                            tpAppSettings.SoundDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("SOUND DIRECTORY:".Length).Trim()); ;
+                            TPAppSettings.SoundDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("SOUND DIRECTORY:".Length).Trim()); ;
                         }
                         else if (line.StartsWith("WORLD OBJECT FILES DIRECTORY:"))
                         {
-                            tpAppSettings.WorldObjectFilesDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("WORLD OBJECT FILES DIRECTORY:".Length).Trim()); ;
+                            TPAppSettings.WorldObjectFilesDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("WORLD OBJECT FILES DIRECTORY:".Length).Trim()); ;
                         }
                         else if (line.StartsWith("FLAG TEXTURES:"))
                         {
-                            tpAppSettings.FlagTexturesDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("FLAG TEXTURES:".Length).Trim());
+                            TPAppSettings.FlagTexturesDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("FLAG TEXTURES:".Length).Trim());
                         }
                         else if (line.StartsWith("EFFECTS DIRECTORY:"))
                         {
-                            tpAppSettings.EffectsDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("EFFECTS DIRECTORY:".Length).Trim());
+                            TPAppSettings.EffectsDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("EFFECTS DIRECTORY:".Length).Trim());
                         }
                         else if (line.StartsWith("WORLD FILES:"))
                         {
-                            tpAppSettings.WorldFilesDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("WORLD FILES:".Length).Trim());
+                            TPAppSettings.WorldFilesDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("WORLD FILES:".Length).Trim());
                         }
                         else if (line.StartsWith("GUI TEXTURES:"))
                         {
-                            tpAppSettings.GuiTexturesDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("GUI TEXTURES:".Length).Trim());
+                            TPAppSettings.GuiTexturesDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("GUI TEXTURES:".Length).Trim());
                         }
                         else if (line.StartsWith("MESH DATA:"))
                         {
-                            tpAppSettings.MeshesDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("MESH DATA:".Length).Trim());
+                            TPAppSettings.MeshesDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("MESH DATA:".Length).Trim());
                         }
                         else if (line.StartsWith("MESH DATA SCENE DIRECTORY:"))
                         {
-                            tpAppSettings.MeshScenesDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("MESH DATA SCENE DIRECTORY:".Length).Trim());
+                            TPAppSettings.MeshScenesDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("MESH DATA SCENE DIRECTORY:".Length).Trim());
+                        }
+                        else if (line.StartsWith("MESH TEXTURES:"))
+                        {
+                            TPAppSettings.MeshTexturesDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("MESH TEXTURES:".Length).Trim());
                         }
                         else if (line.StartsWith("Render Effects Directory:"))
                         {
-                            tpAppSettings.RenderEffectsDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("Render Effects Directory:".Length).Trim());
+                            TPAppSettings.RenderEffectsDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("Render Effects Directory:".Length).Trim());
                         }
                     }
                 }
@@ -96,9 +98,9 @@ namespace TPToolkitLib.Tools
                 throw new FileNotFoundException("AppSettings.ini file not found in the selected folder.", appSettingsFile);
         }
 
-        private static void ReadStrings(TPAppSettings tpAppSettings)
+        private static void ReadStrings()
         {
-            var stringsSettingsFile = Path.Combine(tpAppSettings.TPGameDirectory, "Strings.ini");
+            var stringsSettingsFile = Path.Combine(TPAppSettings.TPGameDirectory, "Strings.ini");
             if (File.Exists(stringsSettingsFile))
             {
                 using (var reader = new StreamReader(File.OpenRead(stringsSettingsFile)))
@@ -108,11 +110,11 @@ namespace TPToolkitLib.Tools
                         var line = reader.ReadLine();
                         if (line.StartsWith("Game Header Files:"))
                         {
-                            tpAppSettings.GameHeaderFilesDirectory = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("Game Header Files:".Length).Trim()); ;
+                            TPAppSettings.GameHeaderFilesDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("Game Header Files:".Length).Trim()); ;
                         }
                         else if (line.StartsWith("Game Strings - English:"))
                         {
-                            tpAppSettings.GameStringsEnglish = Path.Combine(tpAppSettings.TPGameDirectory, line.Substring("Game Strings - English:".Length).Trim()); ;
+                            TPAppSettings.GameStringsEnglish = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("Game Strings - English:".Length).Trim()); ;
                         }
                     }
                 }
