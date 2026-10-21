@@ -5,9 +5,9 @@
     <TargetFramework>net48</TargetFramework>
     <Nullable>enable</Nullable>
     <PackageId>Randhomme.TPToolkitLib</PackageId>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
     <Title>$(AssemblyName)</Title>
     <Authors>Randhomme</Authors>
-	<PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>

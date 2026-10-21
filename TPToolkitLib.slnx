@@ -1,4 +1,3 @@
 <Solution>
-  <Project Path="TPToolkitLib/TPToolkitLib.csproj" />
-  <Project Path="TPToolkitLibTestUI/TPToolkitLibTestUI.csproj"/>
+  <Project Path="TPToolkitLib.csproj" />
 </Solution>
