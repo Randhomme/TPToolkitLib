@@ -8,6 +8,9 @@
 	<PackageReadmeFile>README.md</PackageReadmeFile>
     <Title>$(AssemblyName)</Title>
     <Authors>Randhomme</Authors>
+	<PackageProjectUrl>https://github.com/Randhomme/TPToolkitLib</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Randhomme/TPToolkitLib</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
