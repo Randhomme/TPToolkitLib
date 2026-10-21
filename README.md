@@ -66,3 +66,13 @@ public static void Main()
 - `MdbMesh`
 - `MsbScene`
 - `WorldObjectType`
+
+## Documentation
+
+You can learn more about the classes and methods available in this library at<br>
+https://github.com/Randhomme/TPToolkitLib/wiki
+
+## Found a bug ?
+
+Report a bug by opening an issue on the github repository :<br>
+https://github.com/Randhomme/TPToolkitLib
