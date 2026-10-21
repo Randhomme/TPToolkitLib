@@ -25,7 +25,7 @@ namespace TPToolkitLib.Tools
 
         #region Public methods
 
-        public static WorldObjectType WorldObjectFromWot(string wotFilePath, bool ignoreFormatError)
+        public static WorldObjectType WorldObjectFromWot(string wotFilePath, bool ignoreFormatError = false)
         {
             return ReadWot(wotFilePath, ignoreFormatError);
         }
