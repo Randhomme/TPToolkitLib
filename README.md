@@ -2,13 +2,13 @@
 
 ## About
 
-Welcome to TPToolkitLib, a project meant to be used to read and write files from the game Treasure Planet: Battle at Procyon.<br>
-It currently supports the following file types : mdb (mesh), msb (mesh scene) and wot (world object).<br>
+Welcome to TPToolkitLib, a project meant to be used to read and write files from the game Treasure Planet: Battle at Procyon.  
+It currently supports the following file types : mdb (mesh), msb (mesh scene) and wot (world object).  
 The library can also read the game strings, and knows about pretty much anything else there is to know about your TPGame folder.
 
 ## Usage
 
-The best way to get started is by using the "tool" classes. There is a tool class for each file type (mdb, msb and wot).<br>
+The best way to get started is by using the "tool" classes. There is a tool class for each file type (mdb, msb and wot).  
 The tool classes are static, and provide public static methods to read and write files in an easy way.
 
 ```C#
@@ -69,10 +69,10 @@ public static void Main()
 
 ## Documentation
 
-You can learn more about the classes and methods available in this library at<br>
+You can learn more about the classes and methods available in this library at  
 https://github.com/Randhomme/TPToolkitLib/wiki
 
 ## Found a bug ?
 
-Report a bug by opening an issue on the github repository :<br>
+Report a bug by opening an issue on the github repository :  
 https://github.com/Randhomme/TPToolkitLib
