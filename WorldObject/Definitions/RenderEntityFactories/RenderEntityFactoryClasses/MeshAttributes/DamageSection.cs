@@ -25,7 +25,19 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
         /// </summary>
         public IList<MsbMesh> AdjacentElements { get; } = [];
         public string DebrisMeshScene { get; set; } = string.Empty;
-        public MsbScene? DebrisMsbScene { get; set; }
+        public MsbScene? DebrisMsbScene
+        {
+            get;
+            set
+            {
+                if (field == value) return;
+                field = value;
+                if (value != null)
+                    DebrisMeshScene = value.Name;
+                else
+                    DebrisMeshScene = string.Empty;
+            }
+        }
         public string DebrisFx { get; set; } = string.Empty;
         public IList<DestructFx> DestructFxs { get; } = [];
 

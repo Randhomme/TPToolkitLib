@@ -9,13 +9,13 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
     public class GunPlacement : MeshSubAttribute, IDependencyResolvable
     {
         public string GunName { get; set; } = string.Empty;
-        private WorldObjectType? gun;
         public WorldObjectType? Gun
         {
-            get => gun;
+            get;
             set
             {
-                gun = value;
+                if (field == value) return;
+                field = value;
                 if (value != null)
                     GunName = value.Type;
                 else

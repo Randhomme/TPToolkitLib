@@ -8,13 +8,13 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
     public class MeshHitPoints : MeshSubAttribute, IDependencyResolvable
     {
         public string AssociationName { get; set; } = string.Empty;
-        private WorldObjectType? worldObject;
         public WorldObjectType? WorldObject
         {
-            get => worldObject;
+            get;
             set
             {
-                worldObject = value;
+                if (field == value) return;
+                field = value;
                 if (value != null)
                     AssociationName = value.Type;
                 else

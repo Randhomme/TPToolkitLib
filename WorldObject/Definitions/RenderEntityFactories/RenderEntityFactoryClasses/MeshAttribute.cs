@@ -6,16 +6,16 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
     public class MeshAttribute
     {
         public string MeshName { get; set; } = string.Empty;
-        private MsbElement? mesh;
         /// <summary>
         /// The MsbElement that corresponds to this MeshAttribute's MeshName. This is resolved after the MsbScene is loaded and the MeshName is matched to an element in the scene.
         /// </summary>
         public MsbElement? Mesh
         {
-            get => mesh;
+            get;
             set
             {
-                mesh = value;
+                if (field == value) return;
+                field = value;
                 if (value != null)
                     MeshName = value.Name;
                 else

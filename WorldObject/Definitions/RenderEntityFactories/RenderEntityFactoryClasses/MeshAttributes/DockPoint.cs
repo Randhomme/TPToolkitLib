@@ -5,13 +5,13 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
     public class DockPoint : MeshSubAttribute
     {
         public string AnimationName { get; set; } = string.Empty;
-        private MsbAnimation? animation;
         public MsbAnimation? Animation
         {
-            get => animation;
+            get;
             set
             {
-                animation = value;
+                if (field == value) return;
+                field = value;
                 if (value != null)
                     AnimationName = value.Name;
                 else

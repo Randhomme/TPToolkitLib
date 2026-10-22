@@ -16,13 +16,13 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
         public IList<MeshAttribute> MeshAttributes { get; } = [];
         public float RotationSpeed { get; set; }
         public string MeshSceneName { get; set; } = string.Empty;
-        private MsbScene? meshScene;
         public MsbScene? MeshScene
         {
-            get => meshScene;
+            get;
             set
             {
-                meshScene = value;
+                if (field == value) return;
+                field = value;
                 if (value != null)
                     MeshSceneName = value.Name;
                 else
