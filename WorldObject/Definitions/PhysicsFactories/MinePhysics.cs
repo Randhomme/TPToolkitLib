@@ -9,7 +9,6 @@ namespace TPToolkitLib.WorldObject.Definitions.PhysicsFactories
         public float MaximumSpeed { get; set; }
         public MinePhysics(string type) : base(type)
         {
-            
         }
     }
 }

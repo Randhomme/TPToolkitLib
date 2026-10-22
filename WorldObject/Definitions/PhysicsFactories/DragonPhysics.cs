@@ -12,7 +12,6 @@ namespace TPToolkitLib.WorldObject.Definitions.PhysicsFactories
         public float MaxAngularAcceleration { get; set; }
         public DragonPhysics(string type) : base(type)
         {
-            
         }
     }
 }

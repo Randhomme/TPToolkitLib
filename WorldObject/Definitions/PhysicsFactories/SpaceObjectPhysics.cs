@@ -9,7 +9,6 @@ namespace TPToolkitLib.WorldObject.Definitions.PhysicsFactories
         public float Acceleration { get; set; }
         public SpaceObjectPhysics(string type) : base(type)
         {
-            
         }
     }
 }

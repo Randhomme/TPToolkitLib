@@ -8,7 +8,6 @@ namespace TPToolkitLib.WorldObject.Definitions.PhysicsFactories
         public float Mass { get; set; }
         public ProjectilePhysics(string type) : base(type)
         {
-            
         }
     }
 }

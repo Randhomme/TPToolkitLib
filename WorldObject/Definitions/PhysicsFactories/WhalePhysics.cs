@@ -15,7 +15,6 @@ namespace TPToolkitLib.WorldObject.Definitions.PhysicsFactories
         public float DiveTime { get; set; }
         public WhalePhysics(string type) : base(type)
         {
-            
         }
     }
 }
