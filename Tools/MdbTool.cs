@@ -9,6 +9,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Text.Json.Nodes;
+using TPToolkitLib.Exceptions;
 using TPToolkitLib.Mesh.Classes;
 using TPToolkitLib.Mesh.Structs;
 using TPToolkitLib.Utils;
@@ -17,6 +18,8 @@ namespace TPToolkitLib.Tools
 {
     public static class MdbTool
     {
+        #region Public methods
+
         public static void XMdbTo1Obj(string[] mdbFilePaths, string objFilePath, bool lods)
         {
             XMdbTo1Obj(mdbFilePaths, objFilePath, TPGameTool.TPAppSettings.MeshTexturesDirectory, lods);
@@ -162,177 +165,192 @@ namespace TPToolkitLib.Tools
             WriteMeshToNewMdb(mdbMesh, mdbFilePath);
         }
 
+        #endregion
+
+        #region Read mdb
+
         private static MdbMesh ReadMdb(string groupName, string mdbFilePath, bool lods)
         {
-            var mdbMesh = new MdbMesh(groupName);
-            using (BinaryReader mdbReader = new BinaryReader(File.OpenRead(mdbFilePath)))
+            try
             {
-                uint modelCount, modelLength, modelStart, matCount, vCount, tCount;
-                //File length stuff
-                try
+                var mdbMesh = new MdbMesh(groupName);
+                using (BinaryReader mdbReader = new BinaryReader(File.OpenRead(mdbFilePath)))
                 {
-                    //skip 12 bytes (file data block length)
-                    mdbReader.BaseStream.Seek(12, SeekOrigin.Begin);
-                    //number of model in the mdb (lod)
-                    modelCount = mdbReader.ReadUInt32();
-                }
-                catch
-                {
-                    throw new Exception("Skipped\nUnable to read the number of model in the file.\n");
-                }
-
-                //3d model
-                for (int i = 0; i < modelCount; i++)
-                {
+                    uint modelCount, modelLength, modelStart, matCount, vCount, tCount;
+                    //File length stuff
                     try
                     {
-                        //model block length
-                        modelLength = mdbReader.ReadUInt32();
-                        modelStart = (uint)mdbReader.BaseStream.Position;
-                        //skip 4 bytes (model index)
-                        mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
-                        //vertex count
-                        vCount = mdbReader.ReadUInt32();
+                        //skip 12 bytes (file data block length)
+                        mdbReader.BaseStream.Seek(12, SeekOrigin.Begin);
+                        //number of model in the mdb (lod)
+                        modelCount = mdbReader.ReadUInt32();
                     }
                     catch
                     {
-                        throw new Exception("Skipped\nUnable to read point count of model number " + i + " in the file.\n");
+                        throw new TPException("Unable to read the number of model in the file.");
                     }
-                    if (!lods && i > 0) //Skip lods
-                    {
-                        //Vertexes
-                        for (uint j = 0; j < vCount; j++)
-                        {
-                            mdbReader.BaseStream.Seek(36, SeekOrigin.Current);
-                        }
-                        tCount = mdbReader.ReadUInt32();
 
-                        //Triangles
-                        for (uint j = 0; j < tCount; j++)
-                        {
-                            mdbReader.BaseStream.Seek(12, SeekOrigin.Current);
-                        }
-
-                        //skip 4 bytes (potential animation count)
-                        mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
-                        //check if we reach the end (because potential animation block)
-                        var length = mdbReader.BaseStream.Position - modelStart;
-                        if (length < modelLength)
-                            mdbReader.BaseStream.Seek(modelLength - length, SeekOrigin.Current);
-                    }
-                    else
+                    //3d model
+                    for (int i = 0; i < modelCount; i++)
                     {
-                        var meshModel = new MdbMeshModel();
-                        //Vertexes
-                        for (uint j = 0; j < vCount; j++)
-                        {
-                            try
-                            {
-                                //skip 4 bytes (vertex block length)
-                                mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
-                                float x, y, z, u, v, nx, ny;
-                                byte r, g, b, a;
-                                x = mdbReader.ReadSingle();
-                                y = mdbReader.ReadSingle();
-                                z = mdbReader.ReadSingle();
-                                u = mdbReader.ReadSingle();
-                                v = mdbReader.ReadSingle();
-                                nx = mdbReader.ReadSingle();
-                                ny = mdbReader.ReadSingle();
-                                r = mdbReader.ReadByte();
-                                g = mdbReader.ReadByte();
-                                b = mdbReader.ReadByte();
-                                a = mdbReader.ReadByte();
-                                meshModel.MdbVertices.Add(new(x, y, z, u, v, nx, ny, r, g, b, a));
-                            }
-                            catch
-                            {
-                                throw new Exception("Skipped\nUnable to read point number " + j + " of model number " + i + " in the file.\n");
-                            }
-                        }
                         try
                         {
-                            //tris count
-                            tCount = mdbReader.ReadUInt32();
+                            //model block length
+                            modelLength = mdbReader.ReadUInt32();
+                            modelStart = (uint)mdbReader.BaseStream.Position;
+                            //skip 4 bytes (model index)
+                            mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
+                            //vertex count
+                            vCount = mdbReader.ReadUInt32();
                         }
                         catch
                         {
-                            throw new Exception("Skipped\nUnable to read triangle count of model number " + i + " in the file.\n");
+                            throw new TPException($"Unable to read point count of model number {i} in the file.");
                         }
-                        //Triangles
-                        for (uint j = 0; j < tCount; j++)
+                        if (!lods && i > 0) //Skip lods
                         {
-                            try
+                            //Vertexes
+                            for (uint j = 0; j < vCount; j++)
                             {
-                                //skip 4 bytes (tri block length)
-                                mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
-                                ushort p0, p1, p2, textureIndex;
-                                p0 = mdbReader.ReadUInt16();
-                                p1 = mdbReader.ReadUInt16();
-                                p2 = mdbReader.ReadUInt16();
-                                textureIndex = mdbReader.ReadUInt16();
-                                meshModel.MdbTriangles.Add(new(p0, p1, p2, textureIndex));
+                                mdbReader.BaseStream.Seek(36, SeekOrigin.Current);
                             }
-                            catch
+                            tCount = mdbReader.ReadUInt32();
+
+                            //Triangles
+                            for (uint j = 0; j < tCount; j++)
                             {
-                                throw new Exception("Skipped\nUnable to read triangle number " + j + " of model number " + i + ".\n");
+                                mdbReader.BaseStream.Seek(12, SeekOrigin.Current);
                             }
-                        }
-                        try
-                        {
+
                             //skip 4 bytes (potential animation count)
                             mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
-
                             //check if we reach the end (because potential animation block)
                             var length = mdbReader.BaseStream.Position - modelStart;
                             if (length < modelLength)
                                 mdbReader.BaseStream.Seek(modelLength - length, SeekOrigin.Current);
                         }
-                        catch
+                        else
                         {
-                            throw new Exception("Skipped\nUnable to reach the end of model " + i + " in the file.\n");
-                        }
-                        mdbMesh.MeshModels.Add(meshModel);
-                    }
-                }
+                            var meshModel = new MdbMeshModel();
+                            //Vertexes
+                            for (uint j = 0; j < vCount; j++)
+                            {
+                                try
+                                {
+                                    //skip 4 bytes (vertex block length)
+                                    mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
+                                    float x, y, z, u, v, nx, ny;
+                                    byte r, g, b, a;
+                                    x = mdbReader.ReadSingle();
+                                    y = mdbReader.ReadSingle();
+                                    z = mdbReader.ReadSingle();
+                                    u = mdbReader.ReadSingle();
+                                    v = mdbReader.ReadSingle();
+                                    nx = mdbReader.ReadSingle();
+                                    ny = mdbReader.ReadSingle();
+                                    r = mdbReader.ReadByte();
+                                    g = mdbReader.ReadByte();
+                                    b = mdbReader.ReadByte();
+                                    a = mdbReader.ReadByte();
+                                    meshModel.MdbVertices.Add(new(x, y, z, u, v, nx, ny, r, g, b, a));
+                                }
+                                catch
+                                {
+                                    throw new TPException($"Unable to read point number {j} of model number {i} in the file.");
+                                }
+                            }
+                            try
+                            {
+                                //tris count
+                                tCount = mdbReader.ReadUInt32();
+                            }
+                            catch
+                            {
+                                throw new TPException($"Unable to read triangle count of model number {i} in the file.");
+                            }
+                            //Triangles
+                            for (uint j = 0; j < tCount; j++)
+                            {
+                                try
+                                {
+                                    //skip 4 bytes (tri block length)
+                                    mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
+                                    ushort p0, p1, p2, textureIndex;
+                                    p0 = mdbReader.ReadUInt16();
+                                    p1 = mdbReader.ReadUInt16();
+                                    p2 = mdbReader.ReadUInt16();
+                                    textureIndex = mdbReader.ReadUInt16();
+                                    meshModel.MdbTriangles.Add(new(p0, p1, p2, textureIndex));
+                                }
+                                catch
+                                {
+                                    throw new TPException($"Unable to read triangle number {j} of model number {i}.");
+                                }
+                            }
+                            try
+                            {
+                                //skip 4 bytes (potential animation count)
+                                mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
 
-                //Material
-                try
-                {
-                    //material count
-                    matCount = mdbReader.ReadUInt32();
-                }
-                catch
-                {
-                    throw new Exception("Skipped\nUnable to read texture count in the file.\n");
-                }
-                
-                for (uint i = 0; i < matCount; i++)
-                {
+                                //check if we reach the end (because potential animation block)
+                                var length = mdbReader.BaseStream.Position - modelStart;
+                                if (length < modelLength)
+                                    mdbReader.BaseStream.Seek(modelLength - length, SeekOrigin.Current);
+                            }
+                            catch
+                            {
+                                throw new TPException($"Unable to reach the end of model {i} in the file.");
+                            }
+                            mdbMesh.MeshModels.Add(meshModel);
+                        }
+                    }
+
+                    //Material
                     try
                     {
-                        //skip 4 bytes (block length)
-                        mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
-                        //texture name
-                        int strlength = mdbReader.ReadInt32(); //can't use uint because ReadChars uses int and it's not cool
-                        //checking negative case
-                        if (strlength < 0)
-                            strlength = -strlength - 1; //let's just use the opposite for simplicity
-                        //creating material
-                        var mat = new MdbMaterial(new string(mdbReader.ReadChars(strlength)));
-                        //add to current mat
-                        mdbMesh.Materials.Add(mat);
-                        //skip 72 bytes (material data)
-                        mdbReader.BaseStream.Seek(72, SeekOrigin.Current);
+                        //material count
+                        matCount = mdbReader.ReadUInt32();
                     }
                     catch
                     {
-                        throw new Exception("Skipped\nUnable to read material " + i + ".\n");
+                        throw new TPException($"Unable to read texture count in the file.");
+                    }
+
+                    for (uint i = 0; i < matCount; i++)
+                    {
+                        try
+                        {
+                            //skip 4 bytes (block length)
+                            mdbReader.BaseStream.Seek(4, SeekOrigin.Current);
+                            //texture name
+                            int strlength = mdbReader.ReadInt32(); //can't use uint because ReadChars uses int and it's not cool
+                                                                   //checking negative case
+                            if (strlength < 0)
+                                strlength = -strlength - 1; //let's just use the opposite for simplicity
+                                                            //creating material
+                            var mat = new MdbMaterial(new string(mdbReader.ReadChars(strlength)));
+                            //add to current mat
+                            mdbMesh.Materials.Add(mat);
+                            //skip 72 bytes (material data)
+                            mdbReader.BaseStream.Seek(72, SeekOrigin.Current);
+                        }
+                        catch
+                        {
+                            throw new TPException($"Unable to read material {i}.");
+                        }
                     }
                 }
+                return mdbMesh;
             }
-            return mdbMesh;
+            catch (Exception ex)
+            {
+                throw new TPException($"{Path.GetFileName(mdbFilePath)}: {ex.Message}", ex);
+            }
         }
+
+        #endregion
+
+        #region Read obj
 
         private static ObjScene ReadObj(string objFilePath)
         {
@@ -358,7 +376,7 @@ namespace TPToolkitLib.Tools
                         }
                         catch (Exception ex)
                         {
-                            throw new($"Invalid vertex at line {lineNumber} : {ex.Message}", ex);
+                            throw new TPException($"Invalid vertex at line {lineNumber} : {ex.Message}", ex);
                         }
                     }
                     // vt
@@ -371,7 +389,7 @@ namespace TPToolkitLib.Tools
                         }
                         catch (Exception ex)
                         {
-                            throw new($"Invalid vertex texture at line {lineNumber} : {ex.Message}", ex);
+                            throw new TPException($"Invalid vertex texture at line {lineNumber} : {ex.Message}", ex);
                         }
                     }
                     // vn
@@ -384,7 +402,7 @@ namespace TPToolkitLib.Tools
                         }
                         catch (Exception ex)
                         {
-                            throw new($"Invalid normal at line {lineNumber} : {ex.Message}", ex);
+                            throw new TPException($"Invalid normal at line {lineNumber} : {ex.Message}", ex);
                         }
                     }
                     // f
@@ -394,7 +412,7 @@ namespace TPToolkitLib.Tools
                         {
                             var s = line.Split(separator);
                             if (s.Length > 4)
-                                throw new("It has more than 3 points");
+                                throw new TPException("It has more than 3 points");
                             var p0 = s[1].Split('/');
                             var p1 = s[2].Split('/');
                             var p2 = s[3].Split('/');
@@ -415,7 +433,7 @@ namespace TPToolkitLib.Tools
                         }
                         catch(Exception ex)
                         {
-                            throw new($"Invalid triangle line {lineNumber} : {ex.Message}");
+                            throw new TPException($"Invalid triangle line {lineNumber} : {ex.Message}");
                         }
                     }
                     // group/object
@@ -499,7 +517,7 @@ namespace TPToolkitLib.Tools
                         if (mat != null && !objScene.Materials.Any(m => m.MaterialName.Equals(mat.MaterialName, StringComparison.OrdinalIgnoreCase)))
                         {
                             if (objScene.Materials.Count > ushort.MaxValue)
-                                throw new Exception("Material count can't exceed 65536.");
+                                throw new TPException("Material count can't exceed 65536.");
                             objScene.Materials.Add(mat);
                         }
                         mat = new(line.Substring(7), "NULL");
@@ -516,11 +534,15 @@ namespace TPToolkitLib.Tools
                 if (mat != null && !objScene.Materials.Any(m => m.MaterialName.Equals(mat.MaterialName, StringComparison.OrdinalIgnoreCase)))
                 {
                     if (objScene.Materials.Count > ushort.MaxValue)
-                        throw new Exception("Material count can't exceed 65536.");
+                        throw new TPException("Material count can't exceed 65536.");
                     objScene.Materials.Add(mat);
                 }
             }
         }
+
+        #endregion
+
+        #region Scene conversions
 
         private static IEnumerable<MdbMesh> ObjSceneToMdbMeshes(ObjScene objScene)
         {
@@ -743,6 +765,10 @@ namespace TPToolkitLib.Tools
             return mdbMeshes;
         }
 
+        #endregion
+
+        #region Final materials methods
+
         private static IList<MdbMaterial> GetFinalMdbMaterials(IEnumerable<MdbMesh> meshes)
         {
             List<MdbMaterial> finalMaterials = [];
@@ -791,49 +817,9 @@ namespace TPToolkitLib.Tools
             return glbMaterials;
         }
 
-        private static void ReorganizeTextureIndex(MdbMesh mdbMesh, IList<MdbMaterial> finalMdbMaterials)
-        {
-            for (int i = 0; i < mdbMesh.MeshModels.Count; i++)
-            {
-                var meshModel = mdbMesh.MeshModels[i];
-                for (int j = 0; j < meshModel.MdbTriangles.Count; j++)
-                {
-                    var textureIndex = meshModel.MdbTriangles[j].TextureIndex;
-                    if (textureIndex < mdbMesh.Materials.Count)
-                    {
-                        var mat = mdbMesh.Materials[textureIndex];
-                        for (ushort k = 0; k < finalMdbMaterials.Count; k++)
-                        {
-                            if (mat.MaterialName == finalMdbMaterials[k].MaterialName)
-                            {
-                                var mdbTriangle = meshModel.MdbTriangles[j];
-                                meshModel.MdbTriangles[j] = new(mdbTriangle.P0, mdbTriangle.P1, mdbTriangle.P2, k);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        #endregion
 
-        private static void WriteMaterialsToNewMtl(IList<MdbMaterial> finalMdbMaterials, string mtlPath, string textureDirectory)
-        {
-            using (var mtlWriter = new StreamWriter(File.Open(mtlPath, FileMode.Create, FileAccess.ReadWrite)))
-            {
-                for (int i = 0; i < finalMdbMaterials.Count; i++)
-                {
-                    var mat = finalMdbMaterials[i];
-                    mtlWriter.WriteLine($"newmtl {mat.MaterialName}");
-                    mtlWriter.WriteLine("Ka 0.200000 0.200000 0.200000");
-                    mtlWriter.WriteLine("Kd 1.000000 1.000000 1.000000");
-                    mtlWriter.WriteLine("Ks 0.000000 0.000000 0.000000");
-                    mtlWriter.WriteLine("illum 2");
-                    mtlWriter.WriteLine("Ns 8.000000");
-                    mtlWriter.WriteLine($"map_Kd {Path.Combine(textureDirectory, Path.ChangeExtension(mat.TextureName, "dds"))}");
-                    mtlWriter.WriteLine();
-                }
-            }
-        }
+        #region Write meshes to obj
 
         private static void WriteMeshesToNewObj(IEnumerable<MdbMesh> mdbMeshes, string objFilePath, string mtlFilePath)
         {
@@ -890,6 +876,29 @@ namespace TPToolkitLib.Tools
             }
         }
 
+        private static void WriteMaterialsToNewMtl(IList<MdbMaterial> finalMdbMaterials, string mtlPath, string textureDirectory)
+        {
+            using (var mtlWriter = new StreamWriter(File.Open(mtlPath, FileMode.Create, FileAccess.ReadWrite)))
+            {
+                for (int i = 0; i < finalMdbMaterials.Count; i++)
+                {
+                    var mat = finalMdbMaterials[i];
+                    mtlWriter.WriteLine($"newmtl {mat.MaterialName}");
+                    mtlWriter.WriteLine("Ka 0.200000 0.200000 0.200000");
+                    mtlWriter.WriteLine("Kd 1.000000 1.000000 1.000000");
+                    mtlWriter.WriteLine("Ks 0.000000 0.000000 0.000000");
+                    mtlWriter.WriteLine("illum 2");
+                    mtlWriter.WriteLine("Ns 8.000000");
+                    mtlWriter.WriteLine($"map_Kd {Path.Combine(textureDirectory, Path.ChangeExtension(mat.TextureName, "dds"))}");
+                    mtlWriter.WriteLine();
+                }
+            }
+        }
+
+        #endregion
+
+        #region Write meshes to glb
+
         private static void WriteMeshesToNewGlb(IEnumerable<MdbMesh> mdbMeshes, string glbFilePath, string textureDirectory)
         {
             var finalMdbMaterials = GetFinalMdbMaterials(mdbMeshes);
@@ -945,6 +954,35 @@ namespace TPToolkitLib.Tools
                 glbScene.AddRigidMesh(glbMesh, glbNode);
             }
         }
+
+        private static void ReorganizeTextureIndex(MdbMesh mdbMesh, IList<MdbMaterial> finalMdbMaterials)
+        {
+            for (int i = 0; i < mdbMesh.MeshModels.Count; i++)
+            {
+                var meshModel = mdbMesh.MeshModels[i];
+                for (int j = 0; j < meshModel.MdbTriangles.Count; j++)
+                {
+                    var textureIndex = meshModel.MdbTriangles[j].TextureIndex;
+                    if (textureIndex < mdbMesh.Materials.Count)
+                    {
+                        var mat = mdbMesh.Materials[textureIndex];
+                        for (ushort k = 0; k < finalMdbMaterials.Count; k++)
+                        {
+                            if (mat.MaterialName == finalMdbMaterials[k].MaterialName)
+                            {
+                                var mdbTriangle = meshModel.MdbTriangles[j];
+                                meshModel.MdbTriangles[j] = new(mdbTriangle.P0, mdbTriangle.P1, mdbTriangle.P2, k);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        #region Write meshes to mdb
 
         private static void WriteMeshToNewMdb(MdbMesh mdbMesh, string mdbFilePath)
         {
@@ -1551,5 +1589,7 @@ namespace TPToolkitLib.Tools
             box.Length.Y = (maxy - miny) / 2;
             box.Length.Z = (maxz - minz) / 2;
         }
+
+        #endregion
     }
 }
