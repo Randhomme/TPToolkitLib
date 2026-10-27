@@ -54,155 +54,175 @@ namespace TPToolkitLib.Tools
 
         private static WorldObjectType ReadWot(string wotFilePath, bool ignoreFormatError)
         {
-            var wot = new WorldObjectType();
-            using (var wotReader = new StreamReader(File.OpenRead(wotFilePath)))
+            try
             {
-                string physicsDefinitionString, collisionDefinitionString, renderEntityDefinitionString, aiEntityDefinitionString, customInfoDefinitionString;
-                physicsDefinitionString = collisionDefinitionString = renderEntityDefinitionString = aiEntityDefinitionString = customInfoDefinitionString = string.Empty;
-
-                // Type String
-                var line = wotReader.ReadLine().Substring(12).Trim('\'');
-                if (string.IsNullOrEmpty(line))
-                    throw new TPException("The world object type string should not be empty.");
-                wot.Type = line;
-
-                wotReader.ReadLine(); // ContData
-                wotReader.ReadLine(); // Start section
-
-                // 'Has' stuff, and for logic purpose, they need to match the type or be empty
-                //HasPhysics String
-                line = wotReader.ReadLine().Trim().Substring(18).Trim('\'');
-                if (!string.IsNullOrEmpty(line)) // string empty means no definition
+                var wot = new WorldObjectType();
+                using (var wotReader = new LineStreamReader(File.OpenRead(wotFilePath)))
                 {
-                    if (!string.Equals(line, wot.Type, StringComparison.Ordinal))
+                    try
                     {
-                        throw new TPException($"HasPhysics '{line}' is invalid. Make sure it matches the Type of the world object.");
-                    }
-                    physicsDefinitionString = line;
-                }
+                        string physicsDefinitionString, collisionDefinitionString, renderEntityDefinitionString, aiEntityDefinitionString, customInfoDefinitionString;
+                        physicsDefinitionString = collisionDefinitionString = renderEntityDefinitionString = aiEntityDefinitionString = customInfoDefinitionString = string.Empty;
 
-                //HasCollision String
-                line = wotReader.ReadLine().Trim().Substring(20).Trim('\'');
-                if (!string.IsNullOrEmpty(line)) // string empty means no definition
-                {
-                    if (!string.Equals(line, wot.Type, StringComparison.Ordinal))
+                        // Type String
+                        var line = wotReader.ReadLine().Substring(12).Trim('\'');
+                        if (string.IsNullOrEmpty(line))
+                            throw new TPException("The world object type string should not be empty.");
+                        wot.Type = line;
+
+                        wotReader.ReadLine(); // ContData
+                        wotReader.ReadLine(); // Start section
+
+                        // 'Has' stuff, and for logic purpose, they need to match the type or be empty
+                        //HasPhysics String
+                        line = wotReader.ReadLine().Trim().Substring(18).Trim('\'');
+                        if (!string.IsNullOrEmpty(line)) // string empty means no definition
+                        {
+                            if (!string.Equals(line, wot.Type, StringComparison.Ordinal))
+                            {
+                                throw new TPException($"HasPhysics '{line}' is invalid. Make sure it matches the Type of the world object.");
+                            }
+                            physicsDefinitionString = line;
+                        }
+
+                        //HasCollision String
+                        line = wotReader.ReadLine().Trim().Substring(20).Trim('\'');
+                        if (!string.IsNullOrEmpty(line)) // string empty means no definition
+                        {
+                            if (!string.Equals(line, wot.Type, StringComparison.Ordinal))
+                            {
+                                throw new TPException($"HasCollision '{line}' is invalid. Make sure it matches the Type of the world object.");
+                            }
+                            collisionDefinitionString = line;
+                        }
+
+                        //HasRender String
+                        line = wotReader.ReadLine().Trim().Substring(17).Trim('\'');
+                        if (!string.IsNullOrEmpty(line)) // string empty means no definition
+                        {
+                            if (!string.Equals(line, wot.Type, StringComparison.Ordinal))
+                            {
+                                throw new TPException($"HasRender '{line}' is invalid. Make sure it matches the Type of the world object.");
+                            }
+                            renderEntityDefinitionString = line;
+                        }
+
+                        //HasAI String
+                        line = wotReader.ReadLine().Trim().Substring(13).Trim('\'');
+                        if (!string.IsNullOrEmpty(line)) // string empty means no definition
+                        {
+                            if (!string.Equals(line, wot.Type, StringComparison.Ordinal))
+                            {
+                                throw new TPException($"HasAI '{line}' is invalid. Make sure it matches the Type of the world object.");
+                            }
+                            aiEntityDefinitionString = line;
+                        }
+
+                        //HasCustomInfo String
+                        line = wotReader.ReadLine().Trim().Substring(21).Trim('\'');
+                        if (!string.IsNullOrEmpty(line)) // string empty means no definition
+                        {
+                            if (!string.Equals(line, wot.Type, StringComparison.Ordinal))
+                            {
+                                throw new TPException($"HasCustomInfo '{line}' is invalid. Make sure it matches the Type of the world object.");
+                            }
+                            customInfoDefinitionString = line;
+                        }
+
+                        wotReader.ReadLine(); // End section
+
+                        wotReader.ReadLine(); // Definition String 'AIENTITYDEFINITION'
+                        line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
+                        if (!string.IsNullOrEmpty(line))
+                        {
+                            if (!string.Equals(line, aiEntityDefinitionString, StringComparison.Ordinal))
+                            {
+                                throw new TPException($"EntityType '{line}' for 'AIENTITYDEFINITION' is invalid. Make sure it matches the Type of the world object.");
+                            }
+
+                            // If not empty and valid, check the factory type
+                            var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
+
+                            ReadAiEntityDefinition(wotReader, wot, factoryType, aiEntityDefinitionString, ignoreFormatError);
+                        }
+
+                        wotReader.ReadLine(); // Definition String 'RENDERENTITYDEFINITION'
+                        line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
+                        if (!string.IsNullOrEmpty(line))
+                        {
+                            if (!string.Equals(line, renderEntityDefinitionString, StringComparison.Ordinal))
+                            {
+                                throw new TPException($"EntityType '{line}' for 'RENDERENTITYDEFINITION' is invalid. Make sure it matches the Type of the world object.");
+                            }
+
+                            // If not empty and valid, check the factory type
+                            var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
+
+                            ReadRenderEntityDefinition(wotReader, wot, factoryType, renderEntityDefinitionString, ignoreFormatError);
+                        }
+
+                        wotReader.ReadLine(); // Definition String 'PHYSICSDEFINITION'
+                        line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
+                        if (!string.IsNullOrEmpty(line))
+                        {
+                            if (!string.Equals(line, physicsDefinitionString, StringComparison.Ordinal))
+                            {
+                                throw new TPException($"EntityType '{line}' for 'PHYSICSDEFINITION' is invalid. Make sure it matches the Type of the world object.");
+                            }
+
+                            // If not empty and valid, check the factory type
+                            var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
+
+                            ReadPhysicsDefinition(wotReader, wot, factoryType, physicsDefinitionString, ignoreFormatError);
+                        }
+
+                        wotReader.ReadLine(); // Definition String 'COLLISIONDEFINITION'
+                        line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
+                        if (!string.IsNullOrEmpty(line))
+                        {
+                            if (!string.Equals(line, collisionDefinitionString, StringComparison.Ordinal))
+                            {
+                                throw new TPException($"EntityType '{line}' for 'COLLISIONDEFINITION' is invalid. Make sure it matches the Type of the world object.");
+                            }
+
+                            // If not empty and valid, check the factory type
+                            var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
+
+                            ReadCollisionDefinition(wotReader, wot, factoryType, collisionDefinitionString, ignoreFormatError);
+                        }
+
+                        wotReader.ReadLine(); // Definition String 'CUSTOMINFODEFINITION'
+                        line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
+                        if (!string.IsNullOrEmpty(line))
+                        {
+                            if (!string.Equals(line, customInfoDefinitionString, StringComparison.Ordinal))
+                            {
+                                throw new TPException($"EntityType '{line}' for 'CUSTOMINFODEFINITION' is invalid. Make sure it matches the Type of the world object.");
+                            }
+
+                            // If not empty and valid, check the factory type
+                            var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
+
+                            ReadCustomInfoDefinition(wotReader, wot, factoryType, customInfoDefinitionString, ignoreFormatError);
+                        }
+                    }
+                    catch (Exception ex)
                     {
-                        throw new TPException($"HasCollision '{line}' is invalid. Make sure it matches the Type of the world object.");
+                        throw new TPException($"{Path.GetFileName(wotFilePath)} line {wotReader.CurrentLine}: {ex.Message}", ex);
                     }
-                    collisionDefinitionString = line;
+                    
                 }
-
-                //HasRender String
-                line = wotReader.ReadLine().Trim().Substring(17).Trim('\'');
-                if (!string.IsNullOrEmpty(line)) // string empty means no definition
-                {
-                    if (!string.Equals(line, wot.Type, StringComparison.Ordinal))
-                    {
-                        throw new TPException($"HasRender '{line}' is invalid. Make sure it matches the Type of the world object.");
-                    }
-                    renderEntityDefinitionString = line;
-                }
-
-                //HasAI String
-                line = wotReader.ReadLine().Trim().Substring(13).Trim('\'');
-                if (!string.IsNullOrEmpty(line)) // string empty means no definition
-                {
-                    if (!string.Equals(line, wot.Type, StringComparison.Ordinal))
-                    {
-                        throw new TPException($"HasAI '{line}' is invalid. Make sure it matches the Type of the world object.");
-                    }
-                    aiEntityDefinitionString = line;
-                }
-
-                //HasCustomInfo String
-                line = wotReader.ReadLine().Trim().Substring(21).Trim('\'');
-                if (!string.IsNullOrEmpty(line)) // string empty means no definition
-                {
-                    if (!string.Equals(line, wot.Type, StringComparison.Ordinal))
-                    {
-                        throw new TPException($"HasCustomInfo '{line}' is invalid. Make sure it matches the Type of the world object.");
-                    }
-                    customInfoDefinitionString = line;
-                }
-
-                wotReader.ReadLine(); // End section
-
-                wotReader.ReadLine(); // Definition String 'AIENTITYDEFINITION'
-                line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
-                if (!string.IsNullOrEmpty(line))
-                {
-                    if (!string.Equals(line, aiEntityDefinitionString, StringComparison.Ordinal))
-                    {
-                        throw new TPException($"EntityType '{line}' for 'AIENTITYDEFINITION' is invalid. Make sure it matches the Type of the world object.");
-                    }
-
-                    // If not empty and valid, check the factory type
-                    var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
-
-                    ReadAiEntityDefinition(wotReader, wot, factoryType, aiEntityDefinitionString, ignoreFormatError);
-                }
-
-                wotReader.ReadLine(); // Definition String 'RENDERENTITYDEFINITION'
-                line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
-                if (!string.IsNullOrEmpty(line))
-                {
-                    if (!string.Equals(line, renderEntityDefinitionString, StringComparison.Ordinal))
-                    {
-                        throw new TPException($"EntityType '{line}' for 'RENDERENTITYDEFINITION' is invalid. Make sure it matches the Type of the world object.");
-                    }
-
-                    // If not empty and valid, check the factory type
-                    var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
-
-                    ReadRenderEntityDefinition(wotReader, wot, factoryType, renderEntityDefinitionString, ignoreFormatError);
-                }
-
-                wotReader.ReadLine(); // Definition String 'PHYSICSDEFINITION'
-                line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
-                if (!string.IsNullOrEmpty(line))
-                {
-                    if (!string.Equals(line, physicsDefinitionString, StringComparison.Ordinal))
-                    {
-                        throw new TPException($"EntityType '{line}' for 'PHYSICSDEFINITION' is invalid. Make sure it matches the Type of the world object.");
-                    }
-
-                    // If not empty and valid, check the factory type
-                    var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
-
-                    ReadPhysicsDefinition(wotReader, wot, factoryType, physicsDefinitionString, ignoreFormatError);
-                }
-
-                wotReader.ReadLine(); // Definition String 'COLLISIONDEFINITION'
-                line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
-                if (!string.IsNullOrEmpty(line))
-                {
-                    if (!string.Equals(line, collisionDefinitionString, StringComparison.Ordinal))
-                    {
-                        throw new TPException($"EntityType '{line}' for 'COLLISIONDEFINITION' is invalid. Make sure it matches the Type of the world object.");
-                    }
-
-                    // If not empty and valid, check the factory type
-                    var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
-
-                    ReadCollisionDefinition(wotReader, wot, factoryType, collisionDefinitionString, ignoreFormatError);
-                }
-
-                wotReader.ReadLine(); // Definition String 'CUSTOMINFODEFINITION'
-                line = wotReader.ReadLine().Substring(18).Trim('\''); // EntityType
-                if (!string.IsNullOrEmpty(line))
-                {
-                    if (!string.Equals(line, customInfoDefinitionString, StringComparison.Ordinal))
-                    {
-                        throw new TPException($"EntityType '{line}' for 'CUSTOMINFODEFINITION' is invalid. Make sure it matches the Type of the world object.");
-                    }
-
-                    // If not empty and valid, check the factory type
-                    var factoryType = wotReader.ReadLine().Substring(19).Trim('\'');
-
-                    ReadCustomInfoDefinition(wotReader, wot, factoryType, customInfoDefinitionString, ignoreFormatError);
-                }
+                return wot;
             }
-            return wot;
+            catch (TPException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new TPException($"{Path.GetFileName(wotFilePath)}: {ex.Message}", ex);
+            }
+            
         }
 
         private static void WriteWot(WorldObjectType worldObjectType, string wotFilePath)
@@ -235,7 +255,7 @@ namespace TPToolkitLib.Tools
 
         #region Read definitions
 
-        private static void ReadAiEntityDefinition(StreamReader wotReader, WorldObjectType wot, string factoryType, string aiEntityDefinitionString, bool ignoreFormatError)
+        private static void ReadAiEntityDefinition(LineStreamReader wotReader, WorldObjectType wot, string factoryType, string aiEntityDefinitionString, bool ignoreFormatError)
         {
             wotReader.ReadLine(); // ContData
             wotReader.ReadLine(); // Start section
@@ -255,7 +275,7 @@ namespace TPToolkitLib.Tools
             wotReader.ReadLine(); // End section
         }
 
-        private static void ReadRenderEntityDefinition(StreamReader wotReader, WorldObjectType wot, string factoryType, string renderEntityDefinitionString, bool ignoreFormatError)
+        private static void ReadRenderEntityDefinition(LineStreamReader wotReader, WorldObjectType wot, string factoryType, string renderEntityDefinitionString, bool ignoreFormatError)
         {
             wotReader.ReadLine(); // ContData
             wotReader.ReadLine(); // Start section
@@ -274,7 +294,7 @@ namespace TPToolkitLib.Tools
             wotReader.ReadLine(); // End section
         }
 
-        private static void ReadPhysicsDefinition(StreamReader wotReader, WorldObjectType wot, string factoryType, string physicsDefinitionString, bool ignoreFormatError)
+        private static void ReadPhysicsDefinition(LineStreamReader wotReader, WorldObjectType wot, string factoryType, string physicsDefinitionString, bool ignoreFormatError)
         {
             wotReader.ReadLine(); // ContData
             wotReader.ReadLine(); // Start section
@@ -293,7 +313,7 @@ namespace TPToolkitLib.Tools
             wotReader.ReadLine(); // End section
         }
 
-        private static void ReadCollisionDefinition(StreamReader wotReader, WorldObjectType wot, string factoryType, string collisionDefinitionString, bool ignoreFormatError)
+        private static void ReadCollisionDefinition(LineStreamReader wotReader, WorldObjectType wot, string factoryType, string collisionDefinitionString, bool ignoreFormatError)
         {
             wotReader.ReadLine(); // ContData
             wotReader.ReadLine(); // Start section
@@ -308,7 +328,7 @@ namespace TPToolkitLib.Tools
             wotReader.ReadLine(); // End section
         }
 
-        private static void ReadCustomInfoDefinition(StreamReader wotReader, WorldObjectType wot, string factoryType, string customInfoDefinitionString, bool ignoreFormatError)
+        private static void ReadCustomInfoDefinition(LineStreamReader wotReader, WorldObjectType wot, string factoryType, string customInfoDefinitionString, bool ignoreFormatError)
         {
             wotReader.ReadLine(); // ContData
             wotReader.ReadLine(); // Start section
@@ -384,7 +404,7 @@ namespace TPToolkitLib.Tools
 
         #region Read AI factories
 
-        private static DragonAI ReadDragonAI(StreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
+        private static DragonAI ReadDragonAI(LineStreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
         {
             return new DragonAI(aiEntityDefinitionString)
             {
@@ -392,7 +412,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static IslandAI ReadIslandAI(StreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
+        private static IslandAI ReadIslandAI(LineStreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
         {
             return new IslandAI(aiEntityDefinitionString)
             {
@@ -410,7 +430,7 @@ namespace TPToolkitLib.Tools
             return new SpaceObjectAI(aiEntityDefinitionString);
         }
 
-        private static MineAI ReadMineAI(StreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
+        private static MineAI ReadMineAI(LineStreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
         {
             return new MineAI(aiEntityDefinitionString)
             {
@@ -418,7 +438,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static GunAI ReadGunAI(StreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
+        private static GunAI ReadGunAI(LineStreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
         {
             return new GunAI(aiEntityDefinitionString)
             {
@@ -434,7 +454,7 @@ namespace TPToolkitLib.Tools
             return new VolcanoAI(aiEntityDefinitionString);
         }
 
-        private static ShipAI ReadShipAI(StreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
+        private static ShipAI ReadShipAI(LineStreamReader wotReader, string aiEntityDefinitionString, bool ignoreFormatError)
         {
             return new ShipAI(aiEntityDefinitionString)
             {
@@ -446,7 +466,7 @@ namespace TPToolkitLib.Tools
 
         #region Read Render factories
 
-        private static RenderEntityFactory ReadRenderEntityFactory(StreamReader wotReader, string renderEntityDefinitionString, bool ignoreFormatError)
+        private static RenderEntityFactory ReadRenderEntityFactory(LineStreamReader wotReader, string renderEntityDefinitionString, bool ignoreFormatError)
         {
             var renderEntityFactory = new RenderEntityFactory(renderEntityDefinitionString)
             {
@@ -463,7 +483,7 @@ namespace TPToolkitLib.Tools
             return renderEntityFactory;
         }
 
-        private static void ReadMeshAttributeManager(StreamReader wotReader, IList<MeshAttribute> meshAttributes)
+        private static void ReadMeshAttributeManager(LineStreamReader wotReader, IList<MeshAttribute> meshAttributes)
         {
             wotReader.ReadLine(); // Mesh Attribute Manager
             wotReader.ReadLine(); // Start section
@@ -488,7 +508,7 @@ namespace TPToolkitLib.Tools
             wotReader.ReadLine(); // End section
         }
 
-        private static void ReadMeshAttribute(StreamReader wotReader, MeshAttribute meshAttribute)
+        private static void ReadMeshAttribute(LineStreamReader wotReader, MeshAttribute meshAttribute)
         {
             var meshSubAttributeSize = wotReader.ReadAndParseInt("MeshAttribute - Size Int "); // MeshAttribute - Size Int;
             for (int i = 0; i < meshSubAttributeSize; i++)
@@ -576,7 +596,7 @@ namespace TPToolkitLib.Tools
             }
         }
 
-        private static GunPlacement ReadGunPlacement(StreamReader wotReader, MeshAttribute meshAttribute)
+        private static GunPlacement ReadGunPlacement(LineStreamReader wotReader, MeshAttribute meshAttribute)
         {
             var gunPlacement = new GunPlacement()
             {
@@ -595,7 +615,7 @@ namespace TPToolkitLib.Tools
             return gunPlacement;
         }
 
-        private static DamageSection ReadDamageSection(StreamReader wotReader, MeshAttribute meshAttribute)
+        private static DamageSection ReadDamageSection(LineStreamReader wotReader, MeshAttribute meshAttribute)
         {
             var damageSection = new DamageSection()
             {
@@ -750,7 +770,7 @@ namespace TPToolkitLib.Tools
             return damageSection;
         }
 
-        private static MeshHitPoints ReadMeshHitPoints(StreamReader wotReader)
+        private static MeshHitPoints ReadMeshHitPoints(LineStreamReader wotReader)
         {
             var meshHitPoints = new MeshHitPoints()
             {
@@ -760,7 +780,7 @@ namespace TPToolkitLib.Tools
             return meshHitPoints;
         }
 
-        private static DockPoint ReadDockPoint(StreamReader wotReader)
+        private static DockPoint ReadDockPoint(LineStreamReader wotReader)
         {
             var dockPoint = new DockPoint()
             {
@@ -770,7 +790,7 @@ namespace TPToolkitLib.Tools
             return dockPoint;
         }
 
-        private static FlagAttachmentPoint ReadFlagAttachmentPoint(StreamReader wotReader)
+        private static FlagAttachmentPoint ReadFlagAttachmentPoint(LineStreamReader wotReader)
         {
             var flagAttachmentPoint = new FlagAttachmentPoint()
             {
@@ -780,7 +800,7 @@ namespace TPToolkitLib.Tools
             return flagAttachmentPoint;
         }
 
-        private static PlayEffect ReadPlayEffect(StreamReader wotReader)
+        private static PlayEffect ReadPlayEffect(LineStreamReader wotReader)
         {
             var playEffect = new PlayEffect()
             {
@@ -790,7 +810,7 @@ namespace TPToolkitLib.Tools
             return playEffect;
         }
 
-        private static BoardingEffectPoint ReadBoardingEffectPoint(StreamReader wotReader)
+        private static BoardingEffectPoint ReadBoardingEffectPoint(LineStreamReader wotReader)
         {
             var boardingEffectPoint = new BoardingEffectPoint()
             {
@@ -800,7 +820,7 @@ namespace TPToolkitLib.Tools
             return boardingEffectPoint;
         }
 
-        private static VolcanoSmoke ReadVolcanoSmoke(StreamReader wotReader)
+        private static VolcanoSmoke ReadVolcanoSmoke(LineStreamReader wotReader)
         {
             var volcanoSmoke = new VolcanoSmoke()
             {
@@ -810,7 +830,7 @@ namespace TPToolkitLib.Tools
             return volcanoSmoke;
         }
 
-        private static EnginePortPlacement ReadEnginePortPlacement(StreamReader wotReader)
+        private static EnginePortPlacement ReadEnginePortPlacement(LineStreamReader wotReader)
         {
             var enginePortPlacement = new EnginePortPlacement()
             {
@@ -820,7 +840,7 @@ namespace TPToolkitLib.Tools
             return enginePortPlacement;
         }
 
-        private static GunMuzzlePlacement ReadGunMuzzlePlacement(StreamReader wotReader)
+        private static GunMuzzlePlacement ReadGunMuzzlePlacement(LineStreamReader wotReader)
         {
             var gunMuzzlePlacement = new GunMuzzlePlacement()
             {
@@ -830,7 +850,7 @@ namespace TPToolkitLib.Tools
             return gunMuzzlePlacement;
         }
 
-        private static GunVerticalPivotPlacement ReadGunVerticalPivotPlacement(StreamReader wotReader)
+        private static GunVerticalPivotPlacement ReadGunVerticalPivotPlacement(LineStreamReader wotReader)
         {
             var gunVerticalPivotPlacement = new GunVerticalPivotPlacement()
             {
@@ -840,7 +860,7 @@ namespace TPToolkitLib.Tools
             return gunVerticalPivotPlacement;
         }
 
-        private static WakePlacement ReadWakePlacement(StreamReader wotReader)
+        private static WakePlacement ReadWakePlacement(LineStreamReader wotReader)
         {
             var wakePlacement = new WakePlacement()
             {
@@ -850,7 +870,7 @@ namespace TPToolkitLib.Tools
             return wakePlacement;
         }
 
-        private static ToweePoint ReadToweePoint(StreamReader wotReader)
+        private static ToweePoint ReadToweePoint(LineStreamReader wotReader)
         {
             var toweePoint = new ToweePoint()
             {
@@ -860,7 +880,7 @@ namespace TPToolkitLib.Tools
             return toweePoint;
         }
 
-        private static TowerPoint ReadTowerPoint(StreamReader wotReader)
+        private static TowerPoint ReadTowerPoint(LineStreamReader wotReader)
         {
             var towerPoint = new TowerPoint()
             {
@@ -870,7 +890,7 @@ namespace TPToolkitLib.Tools
             return towerPoint;
         }
 
-        private static TorpedoHomingPoint ReadTorpedoHomingPoint(StreamReader wotReader)
+        private static TorpedoHomingPoint ReadTorpedoHomingPoint(LineStreamReader wotReader)
         {
             var torpedoHomingPoint = new TorpedoHomingPoint()
             {
@@ -880,7 +900,7 @@ namespace TPToolkitLib.Tools
             return torpedoHomingPoint;
         }
 
-        private static CloakingEffectPoint ReadCloakingEffectPoint(StreamReader wotReader)
+        private static CloakingEffectPoint ReadCloakingEffectPoint(LineStreamReader wotReader)
         {
             var cloakingEffectPoint = new CloakingEffectPoint()
             {
@@ -890,7 +910,7 @@ namespace TPToolkitLib.Tools
             return cloakingEffectPoint;
         }
 
-        private static FullyCloakedEffectPoint ReadFullyCloakedEffectPoint(StreamReader wotReader)
+        private static FullyCloakedEffectPoint ReadFullyCloakedEffectPoint(LineStreamReader wotReader)
         {
             var fullyCloakedEffectPoint = new FullyCloakedEffectPoint()
             {
@@ -904,7 +924,7 @@ namespace TPToolkitLib.Tools
 
         #region Read Physics factories
 
-        private static DragonPhysics ReadDragonPhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        private static DragonPhysics ReadDragonPhysics(LineStreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
         {
             return new DragonPhysics(physicsDefinitionString)
             {
@@ -917,7 +937,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static SpaceObjectPhysics ReadSpaceObjectPhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        private static SpaceObjectPhysics ReadSpaceObjectPhysics(LineStreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
         {
             return new SpaceObjectPhysics(physicsDefinitionString)
             {
@@ -927,7 +947,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static WhalePhysics ReadWhalePhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        private static WhalePhysics ReadWhalePhysics(LineStreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
         {
             return new WhalePhysics(physicsDefinitionString)
             {
@@ -943,7 +963,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static ProjectilePhysics ReadProjectilePhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        private static ProjectilePhysics ReadProjectilePhysics(LineStreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
         {
             return new ProjectilePhysics(physicsDefinitionString)
             {
@@ -952,7 +972,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static MinePhysics ReadMinePhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        private static MinePhysics ReadMinePhysics(LineStreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
         {
             return new MinePhysics(physicsDefinitionString)
             {
@@ -962,7 +982,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static TorpedoPhysics ReadTorpedoPhysics(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        private static TorpedoPhysics ReadTorpedoPhysics(LineStreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
         {
             return new TorpedoPhysics(physicsDefinitionString)
             {
@@ -975,7 +995,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static ShipDemo ReadShipDemo(StreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
+        private static ShipDemo ReadShipDemo(LineStreamReader wotReader, string physicsDefinitionString, bool ignoreFormatError)
         {
             return new ShipDemo(physicsDefinitionString)
             {
@@ -992,7 +1012,7 @@ namespace TPToolkitLib.Tools
 
         #region Read Collision factories
 
-        private static BoundingRenderEntity ReadBoundingRenderEntity(StreamReader wotReader, string collisionDefinitionString, bool ignoreFormatError)
+        private static BoundingRenderEntity ReadBoundingRenderEntity(LineStreamReader wotReader, string collisionDefinitionString, bool ignoreFormatError)
         {
             var boundingRenderEntity = new BoundingRenderEntity(collisionDefinitionString);
             var detectionTypeString = wotReader.ReadString("DetectionType String ");
@@ -1020,7 +1040,7 @@ namespace TPToolkitLib.Tools
             return boundingRenderEntity;
         }
 
-        private static Point ReadPoint(StreamReader wotReader, string collisionDefinitionString, bool ignoreFormatError)
+        private static Point ReadPoint(LineStreamReader wotReader, string collisionDefinitionString, bool ignoreFormatError)
         {
             var point = new Point(collisionDefinitionString);
             var detectionTypeString = wotReader.ReadString("DetectionType String ");
@@ -1036,7 +1056,7 @@ namespace TPToolkitLib.Tools
             return point;
         }
 
-        private static BoundingSphere ReadBoundingSphere(StreamReader wotReader, string collisionDefinitionString, bool ignoreFormatError)
+        private static BoundingSphere ReadBoundingSphere(LineStreamReader wotReader, string collisionDefinitionString, bool ignoreFormatError)
         {
             var boundingSphere = new BoundingSphere(collisionDefinitionString);
             var detectionTypeString = wotReader.ReadString("DetectionType String ");
@@ -1062,7 +1082,7 @@ namespace TPToolkitLib.Tools
 
         #region Read CustomInfo factories
 
-        private static DragonCustomInfoFactory ReadDragonCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static DragonCustomInfoFactory ReadDragonCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             var dragonCustomInfoFactory = new DragonCustomInfoFactory(customInfoDefinitionString);
             wotReader.ReadLine(); // GUIInfo Chunk
@@ -1095,7 +1115,7 @@ namespace TPToolkitLib.Tools
             return dragonCustomInfoFactory;
         }
 
-        private static SpaceAnimalCustomInfoFactory ReadSpaceAnimalCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static SpaceAnimalCustomInfoFactory ReadSpaceAnimalCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             var spaceAnimalCustomInfoFactory = new SpaceAnimalCustomInfoFactory(customInfoDefinitionString);
             wotReader.ReadLine(); // GUIInfo Chunk
@@ -1128,7 +1148,7 @@ namespace TPToolkitLib.Tools
             return spaceAnimalCustomInfoFactory;
         }
 
-        private static AsteroidCustomInfoFactory ReadAsteroidCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static AsteroidCustomInfoFactory ReadAsteroidCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             var asteroidCustomInfoFactory = new AsteroidCustomInfoFactory(customInfoDefinitionString)
             {
@@ -1149,7 +1169,7 @@ namespace TPToolkitLib.Tools
             return asteroidCustomInfoFactory;
         }
 
-        private static IslandCustomInfoFactory ReadIslandCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static IslandCustomInfoFactory ReadIslandCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             var islandCustomInfoFactory = new IslandCustomInfoFactory(customInfoDefinitionString)
             {
@@ -1181,12 +1201,12 @@ namespace TPToolkitLib.Tools
             return islandCustomInfoFactory;
         }
 
-        private static BulletCustomInfoFactory ReadBulletCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static BulletCustomInfoFactory ReadBulletCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             return ReadBulletCustomInfoFactory<BulletCustomInfoFactory>(wotReader, customInfoDefinitionString, ignoreFormatError);
         }
 
-        private static StarMortarCustomInfoFactory ReadStarMortarCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static StarMortarCustomInfoFactory ReadStarMortarCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             var magnitude = wotReader.ReadAndParseFloat("Magnitude Float ", ignoreFormatError);
             var maxRadius = wotReader.ReadAndParseFloat("MaxRadius Float ", ignoreFormatError);
@@ -1198,7 +1218,7 @@ namespace TPToolkitLib.Tools
             return starMortarCustomInfoFactory;
         }
         
-        private static EnergyNetCustomInfoFactory ReadEnergyNetCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static EnergyNetCustomInfoFactory ReadEnergyNetCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             var duration = wotReader.ReadAndParseFloat("Duration Float ", ignoreFormatError);
             var percentageOfEnergyDissipated = wotReader.ReadAndParseFloat("PercentageOfEnergyDissipated Float ", ignoreFormatError);
@@ -1209,12 +1229,12 @@ namespace TPToolkitLib.Tools
             return energyNetCustomInfoFactory;
         }
 
-        private static GrapplingHarpoonCustomInfoFactory ReadGrapplingHarpoonCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static GrapplingHarpoonCustomInfoFactory ReadGrapplingHarpoonCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             return ReadBulletCustomInfoFactory<GrapplingHarpoonCustomInfoFactory>(wotReader, customInfoDefinitionString, ignoreFormatError);
         }
         
-        private static GravChargeCustomInfoFactory ReadGravChargeCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static GravChargeCustomInfoFactory ReadGravChargeCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             var magnitude = wotReader.ReadAndParseFloat("Magnitude Float ", ignoreFormatError);
             var radius = wotReader.ReadAndParseFloat("Radius Float ", ignoreFormatError);
@@ -1226,22 +1246,22 @@ namespace TPToolkitLib.Tools
             return gravChargeCustomInfoFactory;
         }
 
-        private static NovaMortarCustomInfoFactory ReadNovaMortarCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static NovaMortarCustomInfoFactory ReadNovaMortarCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             return ReadBulletCustomInfoFactory<NovaMortarCustomInfoFactory>(wotReader, customInfoDefinitionString, ignoreFormatError, false);
         }
 
-        private static MineCustomInfoFactory ReadMineCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static MineCustomInfoFactory ReadMineCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             return ReadBulletCustomInfoFactory<MineCustomInfoFactory>(wotReader, customInfoDefinitionString, ignoreFormatError);
         }
 
-        private static TorpedoCustomInfoFactory ReadTorpedoCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static TorpedoCustomInfoFactory ReadTorpedoCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             return ReadBulletCustomInfoFactory<TorpedoCustomInfoFactory>(wotReader, customInfoDefinitionString, ignoreFormatError);
         }
 
-        private static CrewCustomInfoFactory ReadCrewCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static CrewCustomInfoFactory ReadCrewCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             return new CrewCustomInfoFactory(customInfoDefinitionString)
             {
@@ -1267,7 +1287,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static GunCustomInfoFactory ReadGunCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static GunCustomInfoFactory ReadGunCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             return new GunCustomInfoFactory(customInfoDefinitionString)
             {
@@ -1307,7 +1327,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static ShipCustomInfoFactory ReadShipCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static ShipCustomInfoFactory ReadShipCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             wotReader.ReadLine(); // 00000003 GUIInfo Chunk
             wotReader.ReadLine(); // Start section
@@ -1357,7 +1377,7 @@ namespace TPToolkitLib.Tools
             return shipCustomInfoFactory;
         }
 
-        private static ShipDebrisCustomInfoFactory ReadShipDebrisCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static ShipDebrisCustomInfoFactory ReadShipDebrisCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             return new ShipDebrisCustomInfoFactory(customInfoDefinitionString)
             {
@@ -1366,7 +1386,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static BlackHoleCustomInfoFactory ReadBlackHoleCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static BlackHoleCustomInfoFactory ReadBlackHoleCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             return new BlackHoleCustomInfoFactory(customInfoDefinitionString)
             {
@@ -1378,7 +1398,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static EtheriumCurrentCustomInfoFactory ReadEtheriumCurrentCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static EtheriumCurrentCustomInfoFactory ReadEtheriumCurrentCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             return new EtheriumCurrentCustomInfoFactory(customInfoDefinitionString)
             {
@@ -1387,7 +1407,7 @@ namespace TPToolkitLib.Tools
             };
         }
 
-        private static NebulaCustomInfoFactory ReadNebulaCustomInfoFactory(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
+        private static NebulaCustomInfoFactory ReadNebulaCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
             var nebulaCustomInfoFactory = new NebulaCustomInfoFactory(customInfoDefinitionString)
             {
@@ -1415,7 +1435,7 @@ namespace TPToolkitLib.Tools
             return nebulaCustomInfoFactory;
         }
 
-        private static T ReadBulletCustomInfoFactory<T>(StreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError, bool hasLifetime = true) where T : BulletCustomInfoFactory
+        private static T ReadBulletCustomInfoFactory<T>(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError, bool hasLifetime = true) where T : BulletCustomInfoFactory
         {
             var bulletCustomInfoFactory = (T)Activator.CreateInstance(typeof(T), customInfoDefinitionString);
             bulletCustomInfoFactory.HitEffect = wotReader.ReadString("HitEffect String ");
@@ -1501,7 +1521,7 @@ namespace TPToolkitLib.Tools
             return bulletCustomInfoFactory;
         }
 
-        private static void ReadDamagePotential(StreamReader wotReader, DamagePotential damagePotential, bool ignoreFormatError)
+        private static void ReadDamagePotential(LineStreamReader wotReader, DamagePotential damagePotential, bool ignoreFormatError)
         {
             wotReader.ReadLine(); // #
             wotReader.ReadLine(); // # Hull Wood DamagePotential

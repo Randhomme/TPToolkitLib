@@ -8,37 +8,37 @@ namespace TPToolkitLib.Utils
 {
     public static class DataImportExtensions
     {
-        public static string ReadString(this StreamReader reader, string prefix)
+        public static string ReadString(this LineStreamReader reader, string prefix)
         {
             var line = reader.ReadLine().Trim();
             return line.GetSubstring(prefix).Trim('\'');
         }
 
-        public static bool ReadAndParseBool(this StreamReader reader, string prefix, bool ignoreFormatError = false)
+        public static bool ReadAndParseBool(this LineStreamReader reader, string prefix, bool ignoreFormatError = false)
         {
             var line = reader.ReadLine().Trim();
             return ignoreFormatError ? TryParseBool(line, prefix) : ParseBool(line, prefix);
         }
 
-        public static float ReadAndParseFloat(this StreamReader reader, string prefix, bool ignoreFormatError = false)
+        public static float ReadAndParseFloat(this LineStreamReader reader, string prefix, bool ignoreFormatError = false)
         {
             var line = reader.ReadLine().Trim();
             return ignoreFormatError ? TryParseFloat(line, prefix) : ParseFloat(line, prefix);
         }
 
-        public static int ReadAndParseInt(this StreamReader reader, string prefix, bool ignoreFormatError = false)
+        public static int ReadAndParseInt(this LineStreamReader reader, string prefix, bool ignoreFormatError = false)
         {
             var line = reader.ReadLine().Trim();
             return ignoreFormatError ? TryParseInt(line, prefix) : ParseInt(line, prefix);
         }
 
-        public static Vector3 ReadAndParseVector3(this StreamReader reader, string prefix, bool ignoreFormatError = false)
+        public static Vector3 ReadAndParseVector3(this LineStreamReader reader, string prefix, bool ignoreFormatError = false)
         {
             var line = reader.ReadLine().Trim();
             return ignoreFormatError ? TryParseVector3(line, prefix) : ParseVector3(line, prefix);
         }
 
-        public static TEnum ReadAndParseEnum<TEnum>(this StreamReader reader, string prefix, bool ignoreFormatError = false) where TEnum : struct, Enum
+        public static TEnum ReadAndParseEnum<TEnum>(this LineStreamReader reader, string prefix, bool ignoreFormatError = false) where TEnum : struct, Enum
         {
             var line = reader.ReadLine().Trim();
             return ignoreFormatError ? TryParseEnum<TEnum>(line, prefix) : ParseEnum<TEnum>(line, prefix);
