@@ -49,11 +49,7 @@ namespace TPToolkitLib.Tools
             WriteMsbSceneToMsb(msbScene, msbFilePath);
         }
 
-        #endregion
-
-        #region Private methods
-
-        private static void MergeMeshScenes(MsbScene msbScene1, MsbScene msbScene2)
+        public static void MergeMeshScenes(MsbScene msbScene1, MsbScene msbScene2)
         {
             msbScene1.Name = msbScene2.Name;
             msbScene1.RootMsbElement = msbScene2.RootMsbElement;
@@ -74,6 +70,10 @@ namespace TPToolkitLib.Tools
                 msbScene1.MsbAnimations.Add(msbScene2.MsbAnimations[i]);
             }
         }
+
+        #endregion
+
+        #region Private methods
 
         private static MsbScene ReadMsb(string msbFilePath)
         {
