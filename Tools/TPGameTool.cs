@@ -186,7 +186,7 @@ namespace TPToolkitLib.Tools
             for (int i = 0; i < wotFiles.Length; i++)
             {
                 var wotFile = wotFiles[i];
-                worldObjects.Add(WotTool.WorldObjectFromWot(wotFile, ignoreFormatError));
+                worldObjects.Add(WotTool.WorldObjectFromWotNoResolveDependencies(wotFile, ignoreFormatError));
             }
             WotTool.ResolveDependencies();
         }
