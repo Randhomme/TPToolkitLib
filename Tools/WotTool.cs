@@ -27,7 +27,7 @@ namespace TPToolkitLib.Tools
 
         public static WorldObjectType WorldObjectFromWot(string wotFilePath, bool ignoreFormatError = false)
         {
-            return ReadWot(wotFilePath, ignoreFormatError);
+            return ReadWotAndResolveDependencies(wotFilePath, ignoreFormatError);
         }
 
         public static void WorldObjectToWot(WorldObjectType worldObjectType, string wotFilePath)
@@ -38,6 +38,11 @@ namespace TPToolkitLib.Tools
         #endregion
 
         #region Internal methods
+
+        internal static WorldObjectType WorldObjectFromWotNoResolveDependencies(string wotFilePath, bool ignoreFormatError = false)
+        {
+            return ReadWot(wotFilePath, ignoreFormatError);
+        }
 
         internal static void ResolveDependencies()
         {
@@ -51,6 +56,13 @@ namespace TPToolkitLib.Tools
         #endregion
 
         #region Private methods
+
+        private static WorldObjectType ReadWotAndResolveDependencies(string wotFilePath, bool ignoreFormatError)
+        {
+            var wot = ReadWot(wotFilePath, ignoreFormatError);
+            ResolveDependencies();
+            return wot;
+        }
 
         private static WorldObjectType ReadWot(string wotFilePath, bool ignoreFormatError)
         {
