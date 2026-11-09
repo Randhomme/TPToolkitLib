@@ -34,7 +34,10 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
 
         public void ResolveDependency()
         {
-            MeshScene = TPGameTool.MeshScenes.FirstOrDefault((ms) => ms.Name.Equals(MeshSceneName, StringComparison.OrdinalIgnoreCase));
+            if (string.Equals(MeshSceneName, MsbScene.None.Name, StringComparison.Ordinal))
+                MeshScene = MsbScene.None;
+            else
+                MeshScene = TPGameTool.MeshScenes.FirstOrDefault((ms) => ms.Name.Equals(MeshSceneName, StringComparison.OrdinalIgnoreCase));
             if (MeshScene != null)
             {
                 for (int i = 0; i < MeshAttributes.Count; i++)
