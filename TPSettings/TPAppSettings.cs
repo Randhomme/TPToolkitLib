@@ -14,6 +14,7 @@
         public string SoundDirectory { get; set; } = string.Empty;
         public string WorldFilesDirectory { get; set; } = string.Empty;
         public string WorldObjectFilesDirectory { get; set; } = string.Empty;
+        public string HUDSettingsFileName { get; set; } = string.Empty;
         #endregion
         #region Strings.ini
         public string GameHeaderFilesDirectory { get; set; } = string.Empty;

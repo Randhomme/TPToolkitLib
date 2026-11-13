@@ -11,6 +11,7 @@ namespace TPToolkitLib.Tools
     {
         private static readonly List<WorldObjectType> worldObjects = [];
         private static readonly List<MsbScene> meshScenes = [];
+        private static readonly List<string> hudEntries = [];
         private static readonly List<string> effects = [];
         private static readonly List<string> meshes = [];
         private static readonly List<string> renderEffects = [];
@@ -18,6 +19,7 @@ namespace TPToolkitLib.Tools
         internal static TPAppSettings TPAppSettings { get; } = new();
         public static IReadOnlyList<WorldObjectType> WorldObjects { get => worldObjects; }
         public static IReadOnlyList<MsbScene> MeshScenes { get => meshScenes; }
+        public static IReadOnlyList<string> HudEntries { get => hudEntries; }
         public static IReadOnlyList<string> Effects { get => effects; }
         public static IReadOnlyList<string> Meshes { get => meshes; }
         public static IReadOnlyList<string> RenderEffects { get => renderEffects; }
@@ -27,11 +29,31 @@ namespace TPToolkitLib.Tools
         {
             ReadAppSettingsAndStrings(tpGameDirectory);
             LoadStrings(TPAppSettings.GameStringsEnglish, TPAppSettings.GameHeaderFilesDirectory);
+            LoadHudEntries(TPAppSettings.HUDSettingsFileName);
             LoadEffects(TPAppSettings.EffectsDirectory);
             LoadMeshes(TPAppSettings.MeshesDirectory);
             LoadRenderEffects(TPAppSettings.RenderEffectsDirectory);
             LoadMeshScenes(TPAppSettings.MeshScenesDirectory);
             LoadWorldObjects(TPAppSettings.WorldObjectFilesDirectory, ignoreFormatError);
+        }
+
+        public static void ReloadTPGameFolder(string tpGameDirectory, bool ignoreFormatError = false)
+        {
+            ClearLoadedData();
+            LoadTPGameFolder(tpGameDirectory, ignoreFormatError);
+        }
+
+        public static void ClearLoadedData()
+        {
+            worldObjects.Clear();
+            meshScenes.Clear();
+            effects.Clear();
+            meshes.Clear();
+            renderEffects.Clear();
+            hudEntries.Clear();
+            for (int i = 0; i < tpGameHeaderStrings.Count; i++)
+                tpGameHeaderStrings[i].Strings.Clear();
+            tpGameHeaderStrings.Clear();
         }
 
         private static void ReadAppSettingsAndStrings(string tpGameDirectory)
@@ -90,6 +112,10 @@ namespace TPToolkitLib.Tools
                         else if (line.StartsWith("Render Effects Directory:"))
                         {
                             TPAppSettings.RenderEffectsDirectory = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("Render Effects Directory:".Length).Trim());
+                        }
+                        else if (line.StartsWith("HUD Settings FileName:"))
+                        {
+                            TPAppSettings.HUDSettingsFileName = Path.Combine(TPAppSettings.TPGameDirectory, line.Substring("HUD Settings FileName:".Length).Trim());
                         }
                     }
                 }
@@ -228,6 +254,43 @@ namespace TPToolkitLib.Tools
             {
                 var renderEffectFile = renderEffectFiles[i];
                 renderEffects.Add(Path.GetFileNameWithoutExtension(renderEffectFile));
+            }
+        }
+
+        private static void LoadHudEntries(string hudFilePath)
+        {
+            using (var reader = new StreamReader(File.OpenRead(hudFilePath)))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    // skip one line
+                    if (!reader.EndOfStream)
+                        reader.ReadLine();
+                    if (!reader.EndOfStream)
+                    {
+                        var line2 = reader.ReadLine();
+                        if (line2.Trim().StartsWith("TextureName"))
+                        {
+                            var lineSplit = line.Split(' ');
+                            if (lineSplit.Length > 1)
+                            {
+                                // Extract the face texture name
+                                var hudEntry = lineSplit[1];
+                                if (!string.IsNullOrEmpty(hudEntry))
+                                {
+                                    hudEntries.Add(hudEntry);
+                                }
+                            }
+                            // skip another 24 lines
+                            for (int j = 0; j < 24; j++)
+                            {
+                                if (!reader.EndOfStream)
+                                    reader.ReadLine();
+                            }
+                        }
+                    }
+                }
             }
         }
     }
