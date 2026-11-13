@@ -261,6 +261,11 @@ namespace TPToolkitLib.Tools
         {
             using (var reader = new StreamReader(File.OpenRead(hudFilePath)))
             {
+                for (int i = 0; i < 185; i++)
+                {
+                    if (!reader.EndOfStream)
+                        reader.ReadLine(); // Skip the first 185 lines
+                }
                 while (!reader.EndOfStream)
                 {
                     var line = reader.ReadLine();
