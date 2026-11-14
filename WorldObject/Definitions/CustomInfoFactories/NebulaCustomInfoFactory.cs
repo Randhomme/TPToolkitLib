@@ -11,9 +11,9 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
         public DamagePotential LightningDamagePotential { get; } = new();
         public DamagePotential WindDamagePotential { get; } = new();
         public DamagePotential MeteorDamagePotential { get; } = new();
-        public string NebulaSoundName { get; set; } = string.Empty;
-        public string SolarStormSoundName { get; set; } = string.Empty;
-        public string MeteorShowerSoundName { get; set; } = string.Empty;
+        public string NebulaSoundName { get; set; } = string.Empty; // not case sensitive
+        public string SolarStormSoundName { get; set; } = string.Empty; // not case sensitive
+        public string MeteorShowerSoundName { get; set; } = string.Empty; // not case sensitive
         public NebulaCustomInfoFactory(string type) : base(type)
         {
         }

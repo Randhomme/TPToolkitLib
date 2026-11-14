@@ -1,4 +1,7 @@
-﻿using TPToolkitLib.Enums;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using TPToolkitLib.Enums;
+using TPToolkitLib.Tools;
 
 namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
 {
@@ -6,7 +9,8 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
     {
         public Race CrewRace { get; set; }
         public int PointValue { get; set; }
-        public string CrewNameStringID { get; set; } = string.Empty;
+        [Required(AllowEmptyStrings = false, ErrorMessage = "The CrewNameStringID is required, and cannot be an empty string.")]
+        public string CrewNameStringID { get; set; } // case sensitive
         public bool LeadershipSkillActive { get; set; }
         public int LeadershipSkillAbilityValue { get; set; }
         public bool NavigationSkillActive { get; set; }
@@ -21,10 +25,13 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
         public int CombatSkillAbilityValue { get; set; }
         public bool GunnerySkillActive { get; set; }
         public int GunnerySkillAbilityValue { get; set; }
-        public string TalkingHeadTexture { get; set; } = string.Empty;
+        [Required(AllowEmptyStrings = false, ErrorMessage = "The TalkingHeadTexture is required, and cannot be an empty string.")]
+        public string TalkingHeadTexture { get; set; } // case sensitive
         public Species Species { get; set; }
         public CrewCustomInfoFactory(string type) : base(type)
         {
+            CrewNameStringID = TPGameTool.TPGameHeaderStrings.FirstOrDefault().Strings.Keys.FirstOrDefault();
+            TalkingHeadTexture = TPGameTool.HudEntries.FirstOrDefault();
         }
     }
 }

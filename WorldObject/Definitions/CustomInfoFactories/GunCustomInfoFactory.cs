@@ -1,21 +1,26 @@
-﻿using TPToolkitLib.Enums;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using TPToolkitLib.Enums;
+using TPToolkitLib.Tools;
 
 namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
 {
     public class GunCustomInfoFactory : CustomInfoDefinition
     {
-        public string BulletTypeName_PrimaryString { get; set; } = "NoBulletType";
+        public string BulletTypeName_PrimaryString { get; set; } = "NoBulletType"; // case sensitive
         public WorldObjectType? BulletTypeName_Primary { get; set; }
-        public string BulletTypeName_SecondaryString { get; set; } = "NoBulletType";
+        public string BulletTypeName_SecondaryString { get; set; } = "NoBulletType"; // case sensitive
         public WorldObjectType? BulletTypeName_Secondary { get; set; }
-        public string SoundName { get; set; } = string.Empty;
-        public string MuzzleFlashEffect { get; set; } = string.Empty;
+        public string SoundName { get; set; } = string.Empty; // not case sensitive
+        [Required(AllowEmptyStrings = false, ErrorMessage = "The MuzzleFlashEffect is required, and cannot be an empty string.")]
+        public string MuzzleFlashEffect { get; set; } // case sensitive
         public float MuzzleSpeed { get; set; }
         public float DuringBurstReloadTime { get; set; }
         public int BulletsPerBurst { get; set; }
         public float TimeBetweenBursts { get; set; }
         public bool CalculateAccuracyDeviationDuringBurst { get; set; }
-        public string WeaponBarIconTexture { get; set; } = string.Empty;
+        [Required(AllowEmptyStrings = false, ErrorMessage = "The WeaponBarIconTexture is required, and cannot be an empty string.")]
+        public string WeaponBarIconTexture { get; set; } // case sensitive
         public float VerticalRotationSpeed { get; set; }
         public float HorizontalRotationSpeed { get; set; }
         public float VerticalMinAngle { get; set; }
@@ -32,7 +37,8 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
         public float LongRange_RicochetFactor { get; set; }
         public float EffectiveRange_RicochetFactor { get; set; }
         public int VictoryPointCost { get; set; }
-        public string GunNameStringID { get; set; } = string.Empty;
+        [Required(AllowEmptyStrings = false, ErrorMessage = "The GunNameStringID is required, and cannot be an empty string.")]
+        public string GunNameStringID { get; set; } // case sensitive
         public MountType MountType { get; set; }
         public Race ExclusionRace { get; set; }
         public bool CanBeFiredWhileCloaked { get; set; }
@@ -41,6 +47,9 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
         public float SoundVolume { get; set; }
         public GunCustomInfoFactory(string type) : base(type)
         {
+            MuzzleFlashEffect = TPGameTool.Effects.FirstOrDefault();
+            WeaponBarIconTexture = TPGameTool.HudEntries.FirstOrDefault();
+            GunNameStringID = TPGameTool.TPGameHeaderStrings.FirstOrDefault().Strings.Keys.FirstOrDefault();
         }
     }
 }

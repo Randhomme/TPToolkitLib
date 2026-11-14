@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using TPToolkitLib.Interfaces;
 using TPToolkitLib.Tools;
@@ -8,16 +9,16 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
     public class AsteroidCustomInfoFactory : CustomInfoDefinition, IDependencyResolvable
     {
         public int MaxHitPoints { get; set; }
-        public string WorldObjectToCreateUponDeath0Name { get; set; } = string.Empty;
-        public string WorldObjectToCreateUponDeath1Name { get; set; } = string.Empty;
-        public string WorldObjectToCreateUponDeath2Name { get; set; } = string.Empty;
-        public string WorldObjectToCreateUponDeath3Name { get; set; } = string.Empty;
-        public string WorldObjectToCreateUponDeath4Name { get; set; } = string.Empty;
-        public string WorldObjectToCreateUponDeath5Name { get; set; } = string.Empty;
-        public string WorldObjectToCreateUponDeath6Name { get; set; } = string.Empty;
-        public string WorldObjectToCreateUponDeath7Name { get; set; } = string.Empty;
-        public string WorldObjectToCreateUponDeath8Name { get; set; } = string.Empty;
-        public string WorldObjectToCreateUponDeath9Name { get; set; } = string.Empty;
+        public string WorldObjectToCreateUponDeath0Name { get; set; } = string.Empty; // case sensitive
+        public string WorldObjectToCreateUponDeath1Name { get; set; } = string.Empty; // case sensitive
+        public string WorldObjectToCreateUponDeath2Name { get; set; } = string.Empty; // case sensitive
+        public string WorldObjectToCreateUponDeath3Name { get; set; } = string.Empty; // case sensitive
+        public string WorldObjectToCreateUponDeath4Name { get; set; } = string.Empty; // case sensitive
+        public string WorldObjectToCreateUponDeath5Name { get; set; } = string.Empty; // case sensitive
+        public string WorldObjectToCreateUponDeath6Name { get; set; } = string.Empty; // case sensitive
+        public string WorldObjectToCreateUponDeath7Name { get; set; } = string.Empty; // case sensitive
+        public string WorldObjectToCreateUponDeath8Name { get; set; } = string.Empty; // case sensitive
+        public string WorldObjectToCreateUponDeath9Name { get; set; } = string.Empty; // case sensitive
         public WorldObjectType? WorldObjectToCreateUponDeath0
         {
             get;
@@ -148,9 +149,13 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
                     WorldObjectToCreateUponDeath9Name = string.Empty;
             }
         }
-        public string ExplosionEffect { get; set; } = string.Empty;
+        [Required(AllowEmptyStrings = false, ErrorMessage = "The ExplosionEffect is required, and cannot be an empty string.")]
+        public string ExplosionEffect { get; set; } // case sensitive
         public bool ReportSpotting { get; set; }
-        public AsteroidCustomInfoFactory(string type) : base(type) { }
+        public AsteroidCustomInfoFactory(string type) : base(type)
+        {
+            ExplosionEffect = TPGameTool.Effects.FirstOrDefault(); // case sensitive
+        }
 
         public void ResolveDependency()
         {

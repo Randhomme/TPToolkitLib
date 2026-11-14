@@ -19,7 +19,7 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
         public Race Race { get; set; }
         public bool HasAmbientSound { get; set; }
         public float AmbientSoundMaxDistance { get; set; }
-        public string AmbientSoundName { get; set; } = string.Empty;
+        public string AmbientSoundName { get; set; } = string.Empty; // not case sensitive
         public int CoreDamageSectionMaxHitPoints { get; set; }
         public bool AnnounceSighting { get; set; }
         public IslandCustomInfoFactory(string type) : base(type)
