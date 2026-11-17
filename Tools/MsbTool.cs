@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using TPToolkitLib.Enums;
 using TPToolkitLib.Exceptions;
 using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.MeshScene.Enums;
+using TPToolkitLib.WorldObject.Definitions.CollisionFactories;
+using TPToolkitLib.WorldObject.Enums;
 
 namespace TPToolkitLib.Tools
 {
@@ -968,25 +971,12 @@ namespace TPToolkitLib.Tools
 
         #region Util methods
 
-        private static AttributeName GetAttributeName(string attributeName)
+        private static AttributeName GetAttributeName(string attributeNameString)
         {
-            return attributeName switch
-            {
-                "BoardingEffectPoint" => AttributeName.BoardingEffectPoint,
-                "DamageSection" => AttributeName.DamageSection,
-                "DockPoint" => AttributeName.DockPoint,
-                "EnginePortPlacement" => AttributeName.EnginePortPlacement,
-                "FlagAttachmentPoint" => AttributeName.FlagAttachmentPoint,
-                "GunMuzzlePlacement" => AttributeName.GunMuzzlePlacement,
-                "GunPlacement" => AttributeName.GunPlacement,
-                "GunVerticalPivotPlacement" => AttributeName.GunVerticalPivotPlacement,
-                "PlayEffect" => AttributeName.PlayEffect,
-                "TorpedoHomingPoint" => AttributeName.TorpedoHomingPoint,
-                "ToweePoint" => AttributeName.ToweePoint,
-                "TowerPoint" => AttributeName.TowerPoint,
-                "WakePlacement" => AttributeName.WakePlacement,
-                _ => AttributeName.GunPlacement,
-            };
+            if (EnumExtensions.TryGetValueFromDisplayName<AttributeName>(attributeNameString, out var attributeName))
+                return attributeName;
+            else
+                throw new TPException($"The AttributeName '{attributeNameString}' is invalid.");
         }
 
         private static MsbElement? GetElementFromId(int id, MsbScene msbScene, IList<int> nodeIds, IList<int> meshIds, IList<int> boneIds)

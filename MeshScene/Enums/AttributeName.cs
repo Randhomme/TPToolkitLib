@@ -2,18 +2,22 @@
 {
     public enum AttributeName
     {
-        GunPlacement,
         BoardingEffectPoint,
+        CloakingEffectPoint,
         DamageSection,
         DockPoint,
         EnginePortPlacement,
         FlagAttachmentPoint,
+        FullyCloakedEffectPoint,
         GunMuzzlePlacement,
+        GunPlacement,
         GunVerticalPivotPlacement,
-		PlayEffect,
+        MeshHitPoints,
+        PlayEffect,
         TorpedoHomingPoint,
         ToweePoint,
         TowerPoint,
-        WakePlacement
+        VolcanoSmoke,
+        WakePlacement,
     }
 }
