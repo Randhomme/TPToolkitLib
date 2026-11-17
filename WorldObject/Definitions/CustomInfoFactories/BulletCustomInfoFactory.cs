@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using TPToolkitLib.Enums;
 using TPToolkitLib.Tools;
 using TPToolkitLib.WorldObject.Definitions.CustomInfoFactories.Classes;
+using TPToolkitLib.WorldObject.Enums;
 
 namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
 {

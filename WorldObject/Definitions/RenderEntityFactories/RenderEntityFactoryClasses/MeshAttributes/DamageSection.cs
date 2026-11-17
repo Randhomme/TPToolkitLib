@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using TPToolkitLib.Enums;
 using TPToolkitLib.Interfaces;
 using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.Tools;
+using TPToolkitLib.WorldObject.Enums;
 
 namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses.MeshAttributes
 {

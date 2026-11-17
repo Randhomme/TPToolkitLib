@@ -1,4 +1,4 @@
-﻿namespace TPToolkitLib.Enums
+﻿namespace TPToolkitLib.WorldObject.Enums
 {
     public enum Species
     {

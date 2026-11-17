@@ -1,5 +1,5 @@
 ﻿using System.Numerics;
-using TPToolkitLib.Enums;
+using TPToolkitLib.WorldObject.Enums;
 
 namespace TPToolkitLib.WorldObject.Definitions.CollisionFactories
 {

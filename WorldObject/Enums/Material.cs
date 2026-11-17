@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace TPToolkitLib.Enums
+namespace TPToolkitLib.WorldObject.Enums
 {
     /// <summary>
     /// Represents the material used by a DamageSection in a world object file.

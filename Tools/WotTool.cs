@@ -16,6 +16,7 @@ using TPToolkitLib.WorldObject.Definitions.PhysicsFactories;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses;
 using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses.MeshAttributes;
+using TPToolkitLib.WorldObject.Enums;
 
 namespace TPToolkitLib.Tools
 {

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace TPToolkitLib.Enums
+namespace TPToolkitLib.WorldObject.Enums
 {
     public enum EngineType
     {

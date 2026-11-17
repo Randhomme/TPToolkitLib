@@ -2,6 +2,7 @@
 using System.Linq;
 using TPToolkitLib.Enums;
 using TPToolkitLib.Tools;
+using TPToolkitLib.WorldObject.Enums;
 
 namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
 {
