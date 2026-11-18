@@ -10,7 +10,7 @@ using TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFac
 
 namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
 {
-    public class RenderEntityFactory : RenderEntityDefinition, IDependencyResolvable
+    public class RenderEntityFactory : RenderEntityDefinition, IDependencyResolvable, IValidatableObject
     {
         public bool Distant { get; set; }
         public bool Visible { get; set; }
@@ -72,6 +72,24 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
                     }
                 }
             }
+        }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            int i = 0;
+            try
+            {
+                for (i = 0; i < MeshAttributes.Count; i++)
+                {
+                    var meshAttribute = MeshAttributes[i];
+                    Validator.ValidateObject(meshAttribute, new(meshAttribute), true);
+                }
+            }
+            catch (Exception ex)
+            {
+                return [new($"MeshAttribute {i + 1}: {ex.Message}")];
+            }
+            return [ValidationResult.Success];
         }
 
         private MsbElement? GetMsbElementFromMsbScene(MsbScene msbScene, string elementName)

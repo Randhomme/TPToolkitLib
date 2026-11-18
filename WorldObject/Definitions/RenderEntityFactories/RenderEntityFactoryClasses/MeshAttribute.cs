@@ -1,11 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using TPToolkitLib.MeshScene.Classes;
 
 namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntityFactoryClasses
 {
-    public class MeshAttribute
+    public class MeshAttribute : IValidatableObject
     {
-        public string MeshName { get; set; } = string.Empty;
+        [Required(AllowEmptyStrings = false, ErrorMessage = "The MeshSceneName is required, and cannot be an empty string.")]
+        public string MeshName { get; set; }
         /// <summary>
         /// The MsbElement that corresponds to this MeshAttribute's MeshName. This is resolved after the MsbScene is loaded and the MeshName is matched to an element in the scene.
         /// </summary>
@@ -23,5 +26,27 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
             }
         }
         public IList<MeshSubAttribute> MeshSubAttributes { get; } = [];
+        public MeshAttribute(string meshName)
+        {
+            MeshName = meshName;
+        }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            int i = 0;
+            try
+            {
+                for (i = 0; i < MeshSubAttributes.Count; i++)
+                {
+                    var meshSubAttribute = MeshSubAttributes[i];
+                    Validator.ValidateObject(meshSubAttribute, new(meshSubAttribute), true);
+                }
+            }
+            catch (Exception ex)
+            {
+                return [new($"MeshSubAttribute {i + 1}: {ex.Message}")];
+            }
+            return [ValidationResult.Success];
+        }
     }
 }
