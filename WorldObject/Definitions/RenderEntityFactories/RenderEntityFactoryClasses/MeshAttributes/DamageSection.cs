@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using TPToolkitLib.Interfaces;
 using TPToolkitLib.MeshScene.Classes;
@@ -38,8 +39,22 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
                     DebrisMeshScene = string.Empty;
             }
         }
-        public string DebrisFx { get; set; } = string.Empty;
+        [CustomValidation(typeof(DamageSection), nameof(ValidateDebrisFx))] // Should not be empty with a debrisMeshScene
+        public string DebrisFx { get; set; } = string.Empty; // case sensitive
         public IList<DestructFx> DestructFxs { get; } = [];
+
+        public static ValidationResult ValidateDebrisFx(object value, ValidationContext context)
+        {
+            if (context.ObjectInstance is DamageSection typedInstance)
+            {
+                if (string.IsNullOrWhiteSpace(typedInstance.DebrisFx) && (!string.IsNullOrWhiteSpace(typedInstance.DebrisMeshScene) || typedInstance.DebrisMsbScene != null))
+                    return new("DebrisFx is required with a DebrisMeshScene.");
+                else
+                    return ValidationResult.Success;
+            }
+            else
+                return new("DamageSection is invalid.");
+        }
 
         public void ResolveDependency()
         {
