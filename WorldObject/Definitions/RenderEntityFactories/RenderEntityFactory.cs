@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using TPToolkitLib.Interfaces;
 using TPToolkitLib.MeshScene.Classes;
@@ -15,7 +16,8 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
         public bool Visible { get; set; }
         public IList<MeshAttribute> MeshAttributes { get; } = [];
         public float RotationSpeed { get; set; }
-        public string MeshSceneName { get; set; } = string.Empty;
+        [Required(AllowEmptyStrings = false, ErrorMessage = "The MeshSceneName is required, and cannot be an empty string.")]
+        public string MeshSceneName { get; set; }
         public MsbScene? MeshScene
         {
             get;
@@ -29,8 +31,13 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories
                     MeshSceneName = string.Empty;
             }
         }
-        public string RenderEffectName { get; set; } = string.Empty;
-        public RenderEntityFactory(string type) : base(type) { }
+        [Required(AllowEmptyStrings = false, ErrorMessage = "The RenderEffectName is required, and cannot be an empty string.")]
+        public string RenderEffectName { get; set; }
+        public RenderEntityFactory(string type) : base(type)
+        {
+            MeshSceneName = MsbScene.None.Name;
+            RenderEffectName = TPGameTool.RenderEffects.FirstOrDefault();
+        }
 
         public void ResolveDependency()
         {
