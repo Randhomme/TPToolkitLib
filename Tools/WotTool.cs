@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using TPToolkitLib.Enums;
@@ -240,27 +241,39 @@ namespace TPToolkitLib.Tools
 
         private static void WriteWot(WorldObjectType worldObjectType, string wotFilePath)
         {
-            using(var wotWriter = new StreamWriter(File.Open(wotFilePath, FileMode.Create)))
+            try
             {
-                wotWriter.WriteLine($"Type String '{worldObjectType.Type}'");
-                wotWriter.WriteSection("ConstData", (lvl) =>
+                Validator.ValidateObject(worldObjectType, new(worldObjectType), true);
+                using (var wotWriter = new StreamWriter(File.Open(wotFilePath, FileMode.Create)))
                 {
-                    wotWriter.WriteLineLevel($"HasPhysics String '{worldObjectType.PhysicsDefinition?.Type}'", lvl);
-                    wotWriter.WriteLineLevel($"HasCollision String '{worldObjectType.CollisionDefinition?.Type}'", lvl);
-                    wotWriter.WriteLineLevel($"HasRender String '{worldObjectType.RenderEntityDefinition?.Type}'", lvl);
-                    wotWriter.WriteLineLevel($"HasAI String '{worldObjectType.AiEntityDefinition?.Type}'", lvl);
-                    wotWriter.WriteLineLevel($"HasCustomInfo String '{worldObjectType.CustomInfoDefinition?.Type}'", lvl);
-                });
-                wotWriter.WriteLine("Definition String 'AIENTITYDEFINITION'");
-                WriteAIEntityDefinition(wotWriter, worldObjectType.AiEntityDefinition);
-                wotWriter.WriteLine("Definition String 'RENDERENTITYDEFINITION'");
-                WriteRenderEntityDefinition(wotWriter, worldObjectType.RenderEntityDefinition);
-                wotWriter.WriteLine("Definition String 'PHYSICSDEFINITION'");
-                WritePhysicsDefinition(wotWriter, worldObjectType.PhysicsDefinition);
-                wotWriter.WriteLine("Definition String 'COLLISIONDEFINITION'");
-                WriteCollisionDefinition(wotWriter, worldObjectType.CollisionDefinition);
-                wotWriter.WriteLine("Definition String 'CUSTOMINFODEFINITION'");
-                WriteCustomInfoDefinition(wotWriter, worldObjectType.CustomInfoDefinition);
+                    wotWriter.WriteLine($"Type String '{worldObjectType.Type}'");
+                    wotWriter.WriteSection("ConstData", (lvl) =>
+                    {
+                        wotWriter.WriteLineLevel($"HasPhysics String '{worldObjectType.PhysicsDefinition?.Type}'", lvl);
+                        wotWriter.WriteLineLevel($"HasCollision String '{worldObjectType.CollisionDefinition?.Type}'", lvl);
+                        wotWriter.WriteLineLevel($"HasRender String '{worldObjectType.RenderEntityDefinition?.Type}'", lvl);
+                        wotWriter.WriteLineLevel($"HasAI String '{worldObjectType.AiEntityDefinition?.Type}'", lvl);
+                        wotWriter.WriteLineLevel($"HasCustomInfo String '{worldObjectType.CustomInfoDefinition?.Type}'", lvl);
+                    });
+                    wotWriter.WriteLine("Definition String 'AIENTITYDEFINITION'");
+                    WriteAIEntityDefinition(wotWriter, worldObjectType.AiEntityDefinition);
+                    wotWriter.WriteLine("Definition String 'RENDERENTITYDEFINITION'");
+                    WriteRenderEntityDefinition(wotWriter, worldObjectType.RenderEntityDefinition);
+                    wotWriter.WriteLine("Definition String 'PHYSICSDEFINITION'");
+                    WritePhysicsDefinition(wotWriter, worldObjectType.PhysicsDefinition);
+                    wotWriter.WriteLine("Definition String 'COLLISIONDEFINITION'");
+                    WriteCollisionDefinition(wotWriter, worldObjectType.CollisionDefinition);
+                    wotWriter.WriteLine("Definition String 'CUSTOMINFODEFINITION'");
+                    WriteCustomInfoDefinition(wotWriter, worldObjectType.CustomInfoDefinition);
+                }
+            }
+            catch (TPException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new TPException($"{Path.GetFileName(wotFilePath)}: {ex.Message}", ex);
             }
         }
 
