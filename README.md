@@ -28,27 +28,27 @@ public static void Main()
     string glbFilePath = "Path/To/Ship.glb";
     string textureDirectory = "Path/To/TPGameFolder/BD_Textures";
     bool lods = true;
-    XMdbTo1Glb(mdbFilePaths, glbFilePath, textureDirectory, lods);
+    MdbTool.XMdbTo1Glb(mdbFilePaths, glbFilePath, textureDirectory, lods);
 
     // You can then read your 3D file (you can read multiple file at the same time)
     // and generate the mesh files from it
     string[] glbFilePaths = ["Path/To/Ship1.glb", "Path/To/Ship2.glb"];
     string meshDirectory = "Path/To/TPGameFolder/BD_Meshes";
-    XGlbToXMdb(glbFilePaths, meshDirectory);
+    MdbTool.XGlbToXMdb(glbFilePaths, meshDirectory);
 
     // Read and write mesh scene files, and even combine mesh scenes into one
     // You can of course access the properties of an MsbScene object to modify it
     string msbFilePath1 = "Path/To/MeshScene1.msb";
     string msbFilePath2 = "Path/To/MeshScene2.msb";
     string[] msbFilePaths = [msbFilePath1, msbFilePath2];
-    MsbScene msbScene = MeshSceneFromMsb(msbFilePath1);
-    ImportMsbSceneFromMsb(msbScene, msbFilePath2);
-    MeshSceneToMsb(msbScene, "Path/To/NewMeshScene.msb");
+    MsbScene msbScene = MsbTool.MeshSceneFromMsb(msbFilePath1);
+    MsbTool.ImportMsbSceneFromMsb(msbScene, msbFilePath2);
+    MsbTool.MeshSceneToMsb(msbScene, "Path/To/NewMeshScene.msb");
 
     // Read and write world object files
     // Access the properties to mofify your world object as you want
-    WorldObjectType wot = WorldObjectFromWot("Path/To/WorldObject.wot");
-    WorldObjectToWot(wot, "Path/To/NewWorldObject.wot");
+    WorldObjectType wot = WotTool.WorldObjectFromWot("Path/To/WorldObject.wot");
+    WotTool.WorldObjectToWot(wot, "Path/To/NewWorldObject.wot");
 }
 ```
 
