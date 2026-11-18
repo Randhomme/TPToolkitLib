@@ -740,15 +740,15 @@ namespace TPToolkitLib.Tools
                         damageSection.DebrisFx = val;
                         break;
                     case "destructFx":
-                        var destructFxStr = val.Trim('{', '}', ' '); // Format of DestructFx is 'Effect A B ( X Y Z )'
+                        var destructFxStr = val.Trim('{', '}', ' '); // Format of DestructFx is 'Effect Time Value ( X Y Z )'
                         var destructFxParts = destructFxStr.Split([' '], 4, StringSplitOptions.RemoveEmptyEntries);
                         var destructFx = new DestructFx() { Effect = destructFxParts[0] };
                         if (destructFxParts.Length > 1 && float.TryParse(destructFxParts[1], out var a))
-                            destructFx.A = a;
+                            destructFx.Time = a;
                         else
                             throw new TPException($"The destructFx value '{destructFxStr}' in the DamageSection attribute of MeshAttribute '{meshAttribute.MeshName}' is invalid.");
                         if (destructFxParts.Length > 2 && float.TryParse(destructFxParts[2], out var b))
-                            destructFx.B = b;
+                            destructFx.Value = b;
                         else
                             throw new TPException($"The destructFx value '{destructFxStr}' in the DamageSection attribute of MeshAttribute '{meshAttribute.MeshName}' is invalid.");
                         if (destructFxParts.Length > 3)
@@ -1989,7 +1989,7 @@ namespace TPToolkitLib.Tools
             for (int i = 0; i < damageSection.DestructFxs.Count; i++)
             {
                 var destructFx = damageSection.DestructFxs[i];
-                wotWriter.Write($",destructFx={{ {destructFx.Effect} {destructFx.A:F6} {destructFx.B:F6} ( {destructFx.X:F6} {destructFx.Y:F6} {destructFx.Z:F6} ) }}");
+                wotWriter.Write($",destructFx={{ {destructFx.Effect} {destructFx.Time:F6} {destructFx.Value:F6} ( {destructFx.X:F6} {destructFx.Y:F6} {destructFx.Z:F6} ) }}");
             }
             wotWriter.WriteLineLevel("'", 0);
         }
