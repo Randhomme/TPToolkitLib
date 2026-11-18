@@ -510,7 +510,7 @@ namespace TPToolkitLib.Tools
                 if (string.IsNullOrEmpty(meshName))
                     throw new TPException($"MeshName of attribute {i} cannot be empty.");
 
-                var meshAttribute = new MeshAttribute() { MeshName = meshName };
+                var meshAttribute = new MeshAttribute(meshName);
 
                 ReadMeshAttribute(wotReader, meshAttribute);
 
