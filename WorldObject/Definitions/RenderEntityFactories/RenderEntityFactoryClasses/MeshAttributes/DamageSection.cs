@@ -65,8 +65,8 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
     public class DestructFx
     {
         public string Effect { get; set; } = "none";
-        public float A { get; set; }
-        public float B { get; set; }
+        public float Time { get; set; }
+        public float Value { get; set; }
         public float X { get; set; }
         public float Y { get; set; }
         public float Z { get; set; }
