@@ -9,26 +9,35 @@ namespace TPToolkitLib.Tools
 {
     public static class TPGameTool
     {
-        private static readonly List<WorldObjectType> worldObjects = [];
-        private static readonly List<MsbScene> meshScenes = [];
-        private static readonly List<string> hudEntries = [];
         private static readonly List<string> effects = [];
+        private static readonly List<string> hudEntries = [];
         private static readonly List<string> meshes = [];
+        private static readonly List<MsbScene> meshScenes = [];
+        private static readonly List<string> soundDialogues = [];
+        private static readonly List<string> soundEffects = [];
+        private static readonly List<string> soundMusics = [];
         private static readonly List<string> renderEffects = [];
         private static readonly List<TPGameHeaderStrings> tpGameHeaderStrings = [];
+        private static readonly List<WorldObjectType> worldObjects = [];
         internal static TPAppSettings TPAppSettings { get; } = new();
-        public static IReadOnlyList<WorldObjectType> WorldObjects { get => worldObjects; }
-        public static IReadOnlyList<MsbScene> MeshScenes { get => meshScenes; }
-        public static IReadOnlyList<string> HudEntries { get => hudEntries; }
         public static IReadOnlyList<string> Effects { get => effects; }
+        public static IReadOnlyList<string> HudEntries { get => hudEntries; }
         public static IReadOnlyList<string> Meshes { get => meshes; }
+        public static IReadOnlyList<MsbScene> MeshScenes { get => meshScenes; }
         public static IReadOnlyList<string> RenderEffects { get => renderEffects; }
+        public static IReadOnlyList<string> SoundDialogues { get => soundDialogues; }
+        public static IReadOnlyList<string> SoundEffects { get => soundEffects; }
+        public static IReadOnlyList<string> SoundMusics { get => soundMusics; }
         public static IReadOnlyList<TPGameHeaderStrings> TPGameHeaderStrings { get => tpGameHeaderStrings; }
+        public static IReadOnlyList<WorldObjectType> WorldObjects { get => worldObjects; }
 
         public static void LoadTPGameFolder(string tpGameDirectory, bool ignoreFormatError = false)
         {
             ReadAppSettingsAndStrings(tpGameDirectory);
             LoadStrings(TPAppSettings.GameStringsEnglish, TPAppSettings.GameHeaderFilesDirectory);
+            LoadSoundDialogues($"{TPAppSettings.SoundDirectory}/Dialogue");
+            LoadSoundEffects($"{TPAppSettings.SoundDirectory}/SoundEffects");
+            LoadSoundMusics($"{TPAppSettings.SoundDirectory}/Music");
             LoadHudEntries(TPAppSettings.HUDSettingsFileName);
             LoadEffects(TPAppSettings.EffectsDirectory);
             LoadMeshes(TPAppSettings.MeshesDirectory);
@@ -179,14 +188,14 @@ namespace TPToolkitLib.Tools
             return gameStrings;
         }
 
-        private static void LoadGameHeaderFiles(string gameHeaderFilesDirectory, Dictionary<string, string> gameStrings)
+        private static void LoadGameHeaderFiles(string directory, Dictionary<string, string> gameStrings)
         {
-            var gameHeaderFiles = Directory.GetFiles(gameHeaderFilesDirectory, "*.h");
-            for (int i = 0; i < gameHeaderFiles.Length; i++)
+            var files = Directory.GetFiles(directory, "*.h");
+            for (int i = 0; i < files.Length; i++)
             {
-                var gameHeaderFile = gameHeaderFiles[i];
-                var tpghs = new TPGameHeaderStrings() { GameHeaderFile = Path.GetFileName(gameHeaderFile) };
-                using (var reader = new StreamReader(File.OpenRead(gameHeaderFile)))
+                var file = files[i];
+                var tpghs = new TPGameHeaderStrings() { GameHeaderFile = Path.GetFileName(file) };
+                using (var reader = new StreamReader(File.OpenRead(file)))
                 {
                     while (!reader.EndOfStream)
                     {
@@ -206,54 +215,84 @@ namespace TPToolkitLib.Tools
             }
         }
 
-        private static void LoadWorldObjects(string worldObjectDirectory, bool ignoreFormatError)
+        private static void LoadWorldObjects(string directory, bool ignoreFormatError)
         {
-            var wotFiles = Directory.GetFiles(worldObjectDirectory, "*.wot");
-            for (int i = 0; i < wotFiles.Length; i++)
+            var files = Directory.GetFiles(directory, "*.wot");
+            for (int i = 0; i < files.Length; i++)
             {
-                var wotFile = wotFiles[i];
-                worldObjects.Add(WotTool.WorldObjectFromWotNoResolveDependencies(wotFile, ignoreFormatError));
+                var file = files[i];
+                worldObjects.Add(WotTool.WorldObjectFromWotNoResolveDependencies(file, ignoreFormatError));
             }
             WotTool.ResolveDependencies();
         }
 
-        private static void LoadMeshScenes(string meshSceneDirectory)
+        private static void LoadMeshScenes(string directory)
         {
-            var msbFiles = Directory.GetFiles(meshSceneDirectory, "*.msb");
-            for (int i = 0; i < msbFiles.Length; i++)
+            var files = Directory.GetFiles(directory, "*.msb");
+            for (int i = 0; i < files.Length; i++)
             {
-                var msbFile = msbFiles[i];
-                meshScenes.Add(MsbTool.MeshSceneFromMsb(msbFile));
+                var file = files[i];
+                meshScenes.Add(MsbTool.MeshSceneFromMsb(file));
             }
         }
 
-        private static void LoadEffects(string effectDirectory)
+        private static void LoadEffects(string directory)
         {
-            var effectFiles = Directory.GetFiles(effectDirectory, "*.eft");
-            for (int i = 0; i < effectFiles.Length; i++)
+            var files = Directory.GetFiles(directory, "*.eft");
+            for (int i = 0; i < files.Length; i++)
             {
-                var effectFile = effectFiles[i];
-                effects.Add(Path.GetFileNameWithoutExtension(effectFile));
+                var file = files[i];
+                effects.Add(Path.GetFileNameWithoutExtension(file));
             }
         }
 
-        private static void LoadMeshes(string meshDirectory)
+        private static void LoadMeshes(string directory)
         {
-            var meshFiles = Directory.GetFiles(meshDirectory, "*.mdb");
-            for (int i = 0; i < meshFiles.Length; i++)
+            var files = Directory.GetFiles(directory, "*.mdb");
+            for (int i = 0; i < files.Length; i++)
             {
-                var meshFile = meshFiles[i];
-                meshes.Add(Path.GetFileNameWithoutExtension(meshFile));
+                var file = files[i];
+                meshes.Add(Path.GetFileNameWithoutExtension(file));
             }
         }
 
-        private static void LoadRenderEffects(string renderEffectDirectory)
+        private static void LoadRenderEffects(string directory)
         {
-            var renderEffectFiles = Directory.GetFiles(renderEffectDirectory, "*.ret");
-            for (int i = 0; i < renderEffectFiles.Length; i++)
+            var files = Directory.GetFiles(directory, "*.ret");
+            for (int i = 0; i < files.Length; i++)
             {
-                var renderEffectFile = renderEffectFiles[i];
-                renderEffects.Add(Path.GetFileNameWithoutExtension(renderEffectFile));
+                var file = files[i];
+                renderEffects.Add(Path.GetFileNameWithoutExtension(file));
+            }
+        }
+
+        private static void LoadSoundDialogues(string directory)
+        {
+            var files = Directory.GetFiles(directory, "*.ogg");
+            for (int i = 0; i < files.Length; i++)
+            {
+                var file = files[i];
+                soundDialogues.Add(Path.GetFileNameWithoutExtension(file));
+            }
+        }
+
+        private static void LoadSoundEffects(string directory)
+        {
+            var files = Directory.GetFiles(directory, "*.ogg");
+            for (int i = 0; i < files.Length; i++)
+            {
+                var file = files[i];
+                soundEffects.Add(Path.GetFileNameWithoutExtension(file));
+            }
+        }
+
+        private static void LoadSoundMusics(string directory)
+        {
+            var files = Directory.GetFiles(directory, "*.ogg");
+            for (int i = 0; i < files.Length; i++)
+            {
+                var file = files[i];
+                soundMusics.Add(Path.GetFileNameWithoutExtension(file));
             }
         }
 
