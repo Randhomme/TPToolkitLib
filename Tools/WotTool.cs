@@ -1265,7 +1265,7 @@ namespace TPToolkitLib.Tools
             var magnitude = wotReader.ReadAndParseFloat("Magnitude Float ", ignoreFormatError);
             var radius = wotReader.ReadAndParseFloat("Radius Float ", ignoreFormatError);
             var duration = wotReader.ReadAndParseFloat("Duration Float ", ignoreFormatError);
-            var gravChargeCustomInfoFactory = ReadBulletCustomInfoFactory<GravChargeCustomInfoFactory>(wotReader, customInfoDefinitionString, ignoreFormatError, false);
+            var gravChargeCustomInfoFactory = ReadBulletCustomInfoFactory<GravChargeCustomInfoFactory>(wotReader, customInfoDefinitionString, ignoreFormatError);
             gravChargeCustomInfoFactory.Magnitude = magnitude;
             gravChargeCustomInfoFactory.Radius = radius;
             gravChargeCustomInfoFactory.Duration = duration;
@@ -1274,7 +1274,7 @@ namespace TPToolkitLib.Tools
 
         private static NovaMortarCustomInfoFactory ReadNovaMortarCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
         {
-            return ReadBulletCustomInfoFactory<NovaMortarCustomInfoFactory>(wotReader, customInfoDefinitionString, ignoreFormatError, false);
+            return ReadBulletCustomInfoFactory<NovaMortarCustomInfoFactory>(wotReader, customInfoDefinitionString, ignoreFormatError);
         }
 
         private static MineCustomInfoFactory ReadMineCustomInfoFactory(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError)
@@ -1461,7 +1461,7 @@ namespace TPToolkitLib.Tools
             return nebulaCustomInfoFactory;
         }
 
-        private static T ReadBulletCustomInfoFactory<T>(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError, bool hasLifetime = true) where T : BulletCustomInfoFactory
+        private static T ReadBulletCustomInfoFactory<T>(LineStreamReader wotReader, string customInfoDefinitionString, bool ignoreFormatError) where T : BulletCustomInfoFactory
         {
             var bulletCustomInfoFactory = (T)Activator.CreateInstance(typeof(T), customInfoDefinitionString);
             bulletCustomInfoFactory.HitEffect = wotReader.ReadString("HitEffect String ");
@@ -1541,8 +1541,16 @@ namespace TPToolkitLib.Tools
             wotReader.ReadLine(); // End section
 
             bulletCustomInfoFactory.TravelSound = wotReader.ReadString("Travel Sound String ");
-            if (hasLifetime)
-                bulletCustomInfoFactory.Lifetime = wotReader.ReadAndParseFloat("Lifetime Float ", ignoreFormatError);
+            var lastLine = wotReader.ReadLine().Trim();
+            if (lastLine.StartsWith("Lifetime Float "))
+            {
+                bulletCustomInfoFactory.Lifetime = ignoreFormatError ? DataImportExtensions.TryParseFloat(lastLine, "Lifetime Float ") : DataImportExtensions.ParseFloat(lastLine, "Lifetime Float ");
+                bulletCustomInfoFactory.HasLifetime = true;
+            }
+            else
+                bulletCustomInfoFactory.HasLifetime = false;
+            //if (hasLifetime)
+            //    bulletCustomInfoFactory.Lifetime = wotReader.ReadAndParseFloat("Lifetime Float ", ignoreFormatError);
 
             return bulletCustomInfoFactory;
         }
@@ -2516,7 +2524,7 @@ namespace TPToolkitLib.Tools
                 wotWriter.WriteLineLevel($"Sound_4 String '{bulletCustomInfoFactory.ImpactSound4DragonScale}'", lvl);
             }, level);
             wotWriter.WriteLineLevel($"Travel Sound String '{bulletCustomInfoFactory.TravelSound}'", level);
-            if (bulletCustomInfoFactory.Lifetime >= 0)
+            if (bulletCustomInfoFactory.HasLifetime)
                 wotWriter.WriteLineLevel($"Lifetime Float {bulletCustomInfoFactory.Lifetime:F6}", level);
         }
 

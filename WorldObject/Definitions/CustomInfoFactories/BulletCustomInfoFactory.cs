@@ -56,7 +56,8 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
         public string ImpactSound3DragonScale { get; set; } = string.Empty; // not case sensitive
         public string ImpactSound4DragonScale { get; set; } = string.Empty; // not case sensitive
         public string TravelSound { get; set; } = string.Empty; // not case sensitive
-        public float Lifetime { get; set; } = -1; // For no Lifetime, like GravChargeCustomInfoFactory
+        public bool HasLifetime { get; set; } // For no Lifetime, like GravChargeCustomInfoFactory
+        public float Lifetime { get; set; }
         public BulletCustomInfoFactory(string type) : base(type)
         {
             HitEffect = TPGameTool.Effects.FirstOrDefault();
