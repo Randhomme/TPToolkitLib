@@ -6,8 +6,6 @@ using TPToolkitLib.Enums;
 using TPToolkitLib.Exceptions;
 using TPToolkitLib.MeshScene.Classes;
 using TPToolkitLib.MeshScene.Enums;
-using TPToolkitLib.WorldObject.Definitions.CollisionFactories;
-using TPToolkitLib.WorldObject.Enums;
 
 namespace TPToolkitLib.Tools
 {
@@ -93,6 +91,8 @@ namespace TPToolkitLib.Tools
                 IList<int> nodeMotionIds = [];
                 using (var msbReader = new BinaryReader(File.OpenRead(msbFilePath)))
                 {
+                    int i = 0;
+
                     // Skip 16 bytes (mesh scene size)
                     msbReader.BaseStream.Seek(16, SeekOrigin.Current);
 
@@ -109,9 +109,16 @@ namespace TPToolkitLib.Tools
                     int nodesSize = msbReader.ReadInt32();
 
                     // Nodes - Element(s)
-                    for (int i = 0; i < nodesSize; i++)
+                    try
                     {
-                        msbScene.MsbNodes.Add(ReadNodeFromMsb(msbReader, nodeIds, nodeParentIds));
+                        for (i = 0; i < nodesSize; i++)
+                        {
+                            msbScene.MsbNodes.Add(ReadNodeFromMsb(msbReader, nodeIds, nodeParentIds));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new TPException($"Node {i + 1}: {ex.Message}", ex);
                     }
 
                     // Meshes - Size
@@ -119,9 +126,16 @@ namespace TPToolkitLib.Tools
                     int meshesSize = msbReader.ReadInt32();
 
                     // Meshes - Element(s)
-                    for (int i = 0; i < meshesSize; i++)
+                    try
                     {
-                        msbScene.MsbMeshes.Add(ReadMeshFromMsb(msbReader, meshIds, meshParentIds));
+                        for (i = 0; i < meshesSize; i++)
+                        {
+                            msbScene.MsbMeshes.Add(ReadMeshFromMsb(msbReader, meshIds, meshParentIds));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new TPException($"Mesh {i + 1}: {ex.Message}", ex);
                     }
 
                     // Bones - Size
@@ -129,9 +143,16 @@ namespace TPToolkitLib.Tools
                     int bonesSize = msbReader.ReadInt32();
 
                     // Bones - Element(s)
-                    for (int i = 0; i < bonesSize; i++)
+                    try
                     {
-                        msbScene.MsbBones.Add(ReadBoneFromMsb(msbReader, boneIds, boneParentIds));
+                        for (i = 0; i < bonesSize; i++)
+                        {
+                            msbScene.MsbBones.Add(ReadBoneFromMsb(msbReader, boneIds, boneParentIds));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new TPException($"Bone {i + 1}: {ex.Message}", ex);
                     }
 
                     // Animations - Size
@@ -139,9 +160,16 @@ namespace TPToolkitLib.Tools
                     int animationsSize = msbReader.ReadInt32();
 
                     // Animations - Element(s)
-                    for (int i = 0; i < animationsSize; i++)
+                    try
                     {
-                        msbScene.MsbAnimations.Add(ReadAnimationFromMsb(msbReader, nodeMotionIds));
+                        for (i = 0; i < animationsSize; i++)
+                        {
+                            msbScene.MsbAnimations.Add(ReadAnimationFromMsb(msbReader, nodeMotionIds));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new TPException($"Animation {i + 1}: {ex.Message}", ex);
                     }
                 }
 
@@ -312,23 +340,31 @@ namespace TPToolkitLib.Tools
             int attributesSize = msbReader.ReadInt32();
 
             // Attributes - Element
-            for (int j = 0; j < attributesSize; j++)
+            int i = 0;
+            try
             {
-                var msbAttribute = new MsbAttribute();
-                msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 0A 00 00 00 + attribute length
+                for (i = 0; i < attributesSize; i++)
+                {
+                    var msbAttribute = new MsbAttribute();
+                    msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 0A 00 00 00 + attribute length
 
-                // AttributeName
-                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0B 00 00 00
-                int attributeNameLength = msbReader.ReadInt32();
-                var attributeName = new string(msbReader.ReadChars(attributeNameLength));
-                msbAttribute.AttributeName = GetAttributeName(attributeName);
+                    // AttributeName
+                    msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0B 00 00 00
+                    int attributeNameLength = msbReader.ReadInt32();
+                    var attributeName = new string(msbReader.ReadChars(attributeNameLength));
+                    msbAttribute.AttributeName = GetAttributeName(attributeName);
 
-                // DescriptorName
-                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0C 00 00 00
-                int descriptorNameLength = msbReader.ReadInt32();
-                msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
+                    // DescriptorName
+                    msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0C 00 00 00
+                    int descriptorNameLength = msbReader.ReadInt32();
+                    msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
 
-                msbNode.MsbAttirbutes.Add(msbAttribute);
+                    msbNode.MsbAttirbutes.Add(msbAttribute);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new TPException($"Attribute {i + 1}: {ex.Message}", ex);
             }
 
             return msbNode;
@@ -383,25 +419,33 @@ namespace TPToolkitLib.Tools
             int attributesSize = msbReader.ReadInt32();
 
             // Attributes - Element
-            for (int j = 0; j < attributesSize; j++)
+            int i = 0;
+            try
             {
-                var msbAttribute = new MsbAttribute();
-                msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 0A 00 00 00 + attribute length
+                for (i = 0; i < attributesSize; i++)
+                {
+                    var msbAttribute = new MsbAttribute();
+                    msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 0A 00 00 00 + attribute length
 
-                // AttributeName
-                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0B 00 00 00
-                int attributeNameLength = msbReader.ReadInt32();
-                var attributeName = new string(msbReader.ReadChars(attributeNameLength));
-                msbAttribute.AttributeName = GetAttributeName(attributeName);
+                    // AttributeName
+                    msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0B 00 00 00
+                    int attributeNameLength = msbReader.ReadInt32();
+                    var attributeName = new string(msbReader.ReadChars(attributeNameLength));
+                    msbAttribute.AttributeName = GetAttributeName(attributeName);
 
-                // DescriptorName
-                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0C 00 00 00
-                int descriptorNameLength = msbReader.ReadInt32();
-                msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
+                    // DescriptorName
+                    msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0C 00 00 00
+                    int descriptorNameLength = msbReader.ReadInt32();
+                    msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
 
-                msbMesh.MsbAttirbutes.Add(msbAttribute);
+                    msbMesh.MsbAttirbutes.Add(msbAttribute);
+                }
             }
-
+            catch (Exception ex)
+            {
+                throw new TPException($"Attribute {i + 1}: {ex.Message}", ex);
+            }
+            
             return msbMesh;
         }
 
@@ -454,23 +498,31 @@ namespace TPToolkitLib.Tools
             int attributesSize = msbReader.ReadInt32();
 
             // Attributes - Element
-            for (int j = 0; j < attributesSize; j++)
+            int i = 0;
+            try
             {
-                var msbAttribute = new MsbAttribute();
-                msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 0A 00 00 00 + attribute length
+                for (i = 0; i < attributesSize; i++)
+                {
+                    var msbAttribute = new MsbAttribute();
+                    msbReader.BaseStream.Seek(8, SeekOrigin.Current); // 0A 00 00 00 + attribute length
 
-                // AttributeName
-                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0B 00 00 00
-                int attributeNameLength = msbReader.ReadInt32();
-                var attributeName = new string(msbReader.ReadChars(attributeNameLength));
-                msbAttribute.AttributeName = GetAttributeName(attributeName);
+                    // AttributeName
+                    msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0B 00 00 00
+                    int attributeNameLength = msbReader.ReadInt32();
+                    var attributeName = new string(msbReader.ReadChars(attributeNameLength));
+                    msbAttribute.AttributeName = GetAttributeName(attributeName);
 
-                // DescriptorName
-                msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0C 00 00 00
-                int descriptorNameLength = msbReader.ReadInt32();
-                msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
+                    // DescriptorName
+                    msbReader.BaseStream.Seek(4, SeekOrigin.Current); // 0C 00 00 00
+                    int descriptorNameLength = msbReader.ReadInt32();
+                    msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
 
-                msbBone.MsbAttirbutes.Add(msbAttribute);
+                    msbBone.MsbAttirbutes.Add(msbAttribute);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new TPException($"Attribute {i + 1}: {ex.Message}", ex);
             }
 
             // Influence Map Name
