@@ -403,7 +403,9 @@ namespace TPToolkitLib.Tools
                     wot.CustomInfoDefinition = ReadCrewCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
                     break;
                 case "GunCustomInfoFactory":
-                    wot.CustomInfoDefinition = ReadGunCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
+                    var gunCustomInfoFactory = ReadGunCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);
+                    wot.CustomInfoDefinition = gunCustomInfoFactory;
+                    dependencyResolvables.Add(gunCustomInfoFactory);
                     break;
                 case "ShipCustomInfoFactory":
                     wot.CustomInfoDefinition = ReadShipCustomInfoFactory(wotReader, customInfoDefinitionString, ignoreFormatError);

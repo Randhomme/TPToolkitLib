@@ -1,12 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using TPToolkitLib.Enums;
+using TPToolkitLib.Interfaces;
 using TPToolkitLib.Tools;
 using TPToolkitLib.WorldObject.Enums;
 
 namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
 {
-    public class GunCustomInfoFactory : CustomInfoDefinition
+    public class GunCustomInfoFactory : CustomInfoDefinition, IDependencyResolvable
     {
         public string BulletTypeName_PrimaryString { get; set; } = "NoBulletType"; // case sensitive
         public WorldObjectType? BulletTypeName_Primary
@@ -75,6 +77,12 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
             MuzzleFlashEffect = TPGameTool.Effects.FirstOrDefault();
             WeaponBarIconTexture = TPGameTool.HudEntries.FirstOrDefault();
             GunNameStringID = TPGameTool.TPGameHeaderStrings.FirstOrDefault().Strings.Keys.FirstOrDefault();
+        }
+
+        public void ResolveDependency()
+        {
+            BulletTypeName_Primary = TPGameTool.WorldObjects.FirstOrDefault((wot) => wot.Type.Equals(BulletTypeName_PrimaryString, StringComparison.Ordinal)); // Case sensitive
+            BulletTypeName_Secondary = TPGameTool.WorldObjects.FirstOrDefault((wot) => wot.Type.Equals(BulletTypeName_SecondaryString, StringComparison.Ordinal)); // Case sensitive
         }
     }
 }
