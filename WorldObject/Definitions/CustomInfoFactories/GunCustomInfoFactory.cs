@@ -9,9 +9,33 @@ namespace TPToolkitLib.WorldObject.Definitions.CustomInfoFactories
     public class GunCustomInfoFactory : CustomInfoDefinition
     {
         public string BulletTypeName_PrimaryString { get; set; } = "NoBulletType"; // case sensitive
-        public WorldObjectType? BulletTypeName_Primary { get; set; }
+        public WorldObjectType? BulletTypeName_Primary
+        {
+            get;
+            set
+            {
+                if (field == value) return;
+                field = value;
+                if (value != null)
+                    BulletTypeName_PrimaryString = value.Type;
+                else
+                    BulletTypeName_PrimaryString = string.Empty;
+            }
+        }
         public string BulletTypeName_SecondaryString { get; set; } = "NoBulletType"; // case sensitive
-        public WorldObjectType? BulletTypeName_Secondary { get; set; }
+        public WorldObjectType? BulletTypeName_Secondary
+        {
+            get;
+            set
+            {
+                if (field == value) return;
+                field = value;
+                if (value != null)
+                    BulletTypeName_SecondaryString = value.Type;
+                else
+                    BulletTypeName_SecondaryString = string.Empty;
+            }
+        }
         public string SoundName { get; set; } = string.Empty; // not case sensitive
         [Required(AllowEmptyStrings = false, ErrorMessage = "The MuzzleFlashEffect is required, and cannot be an empty string.")]
         public string MuzzleFlashEffect { get; set; } // case sensitive
