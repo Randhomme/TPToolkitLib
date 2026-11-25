@@ -2,8 +2,7 @@
 
 namespace TPToolkitLib.WorldObject.Definitions.PhysicsFactories
 {
-
-    internal class TorpedoPhysics : PhysicsDefinition
+    public class TorpedoPhysics : PhysicsDefinition
     {
         public Vector3 CenterOfMass { get; set; }
         public float Mass { get; set; }
