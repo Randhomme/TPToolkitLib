@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using TPToolkitLib.Interfaces;
 using TPToolkitLib.Tools;
@@ -8,7 +9,8 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
 {
     public class GunPlacement : MeshSubAttribute, IDependencyResolvable
     {
-        public string GunName { get; set; } = string.Empty;
+        [Required(AllowEmptyStrings = false, ErrorMessage = "The GunName is required, and cannot be an empty string.")]
+        public string GunName { get; set; } // case sensitive
         public WorldObjectType? Gun
         {
             get;
@@ -24,6 +26,12 @@ namespace TPToolkitLib.WorldObject.Definitions.RenderEntityFactories.RenderEntit
         }
         public float MaxRotation { get; set; }
         public Bank Bank { get; set; }
+
+        public GunPlacement()
+        {
+            Gun = TPGameTool.WorldObjects.FirstOrDefault();
+            GunName = Gun?.Type ?? string.Empty;
+        }
 
         public void ResolveDependency()
         {
