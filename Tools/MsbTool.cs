@@ -359,7 +359,7 @@ namespace TPToolkitLib.Tools
                     int descriptorNameLength = msbReader.ReadInt32();
                     msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
 
-                    msbNode.MsbAttirbutes.Add(msbAttribute);
+                    msbNode.MsbAttributes.Add(msbAttribute);
                 }
             }
             catch (Exception ex)
@@ -438,7 +438,7 @@ namespace TPToolkitLib.Tools
                     int descriptorNameLength = msbReader.ReadInt32();
                     msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
 
-                    msbMesh.MsbAttirbutes.Add(msbAttribute);
+                    msbMesh.MsbAttributes.Add(msbAttribute);
                 }
             }
             catch (Exception ex)
@@ -517,7 +517,7 @@ namespace TPToolkitLib.Tools
                     int descriptorNameLength = msbReader.ReadInt32();
                     msbAttribute.DescriptorName = new string(msbReader.ReadChars(descriptorNameLength));
 
-                    msbBone.MsbAttirbutes.Add(msbAttribute);
+                    msbBone.MsbAttributes.Add(msbAttribute);
                 }
             }
             catch (Exception ex)
@@ -687,12 +687,12 @@ namespace TPToolkitLib.Tools
 
             // Attributes - Size
             msbWriter.Write(9);
-            msbWriter.Write(msbNode.MsbAttirbutes.Count);
+            msbWriter.Write(msbNode.MsbAttributes.Count);
 
             // Attributes - Element
-            for (int i= 0; i < msbNode.MsbAttirbutes.Count; i++)
+            for (int i= 0; i < msbNode.MsbAttributes.Count; i++)
             {
-                WriteMsbAttributeToMsb(msbNode.MsbAttirbutes[i], msbWriter);
+                WriteMsbAttributeToMsb(msbNode.MsbAttributes[i], msbWriter);
             }
 
             var blockLength = msbWriter.BaseStream.Position - pos - 4;
@@ -746,12 +746,12 @@ namespace TPToolkitLib.Tools
 
             // Attributes - Size
             msbWriter.Write(9);
-            msbWriter.Write(msbMesh.MsbAttirbutes.Count);
+            msbWriter.Write(msbMesh.MsbAttributes.Count);
 
             // Attributes - Element
-            for (int i = 0; i < msbMesh.MsbAttirbutes.Count; i++)
+            for (int i = 0; i < msbMesh.MsbAttributes.Count; i++)
             {
-                WriteMsbAttributeToMsb(msbMesh.MsbAttirbutes[i], msbWriter);
+                WriteMsbAttributeToMsb(msbMesh.MsbAttributes[i], msbWriter);
             }
 
             var blockLength = msbWriter.BaseStream.Position - pos - 4;
@@ -805,12 +805,12 @@ namespace TPToolkitLib.Tools
 
             // Attributes - Size
             msbWriter.Write(9);
-            msbWriter.Write(msbBone.MsbAttirbutes.Count);
+            msbWriter.Write(msbBone.MsbAttributes.Count);
 
             // Attributes - Element
-            for (int i = 0; i < msbBone.MsbAttirbutes.Count; i++)
+            for (int i = 0; i < msbBone.MsbAttributes.Count; i++)
             {
-                WriteMsbAttributeToMsb(msbBone.MsbAttirbutes[i], msbWriter);
+                WriteMsbAttributeToMsb(msbBone.MsbAttributes[i], msbWriter);
             }
 
             // Influence Map Name

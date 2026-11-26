@@ -9,6 +9,6 @@ namespace TPToolkitLib.MeshScene.Classes
         public Vector3 Pivot { get; set; }
         public Vector3 Position { get; set; }
         public Vector3 Rotation { get; set; } // yaw, pitch, roll (in radian)
-        public IList<MsbAttribute> MsbAttirbutes { get; } = [];
+        public IList<MsbAttribute> MsbAttributes { get; } = [];
     }
 }
